@@ -522,11 +522,15 @@ function TreeView({
     }
   };
 
+  // If focusTreeId is active, show only that person and their descendants downwards
+  const focusPerson = focusTreeId ? members.find(m => m.id === focusTreeId) : null;
+
   // Autocomplete matching members by name
   const matchingMembers = useMemo(() => {
     if (!filterName.trim()) return [];
+    if (focusPerson && filterName.trim() === focusPerson.fullName.trim()) return [];
     return members.filter(m => matchesMember(m, filterName)).slice(0, 12);
-  }, [filterName, members]);
+  }, [filterName, members, focusPerson]);
 
   const roots = members.filter(m => !m.fatherId && !m.motherId && !m.spouseIds.some(s => {
     const spouse = members.find(x => x.id === s);
@@ -534,8 +538,6 @@ function TreeView({
   })).sort(bySeniority);
   const options = roots.length ? roots : members.filter(m => !m.fatherId && !m.motherId);
 
-  // If focusTreeId is active, show only that person and their descendants downwards
-  const focusPerson = focusTreeId ? members.find(m => m.id === focusTreeId) : null;
   const shown = focusPerson
     ? [focusPerson]
     : rootId === 'all'
@@ -727,81 +729,103 @@ function TreeView({
           <div className="tree-filters">
             {/* Lọc xem cây từ một người cụ thể đổ xuống */}
             <div className="tree-name-filter" ref={filterContainerRef}>
-              <label htmlFor="tree-filter-input" className="tree-filter-label">Lọc từ người:</label>
-              <div className="tree-search-input-wrap">
-                <Search size={15} />
-                <input
-                  id="tree-filter-input"
-                  ref={filterInputRef}
-                  type="text"
-                  value={filterName}
-                  placeholder="Tìm tên để xem nhánh..."
-                  onChange={e => {
-                    setFilterName(e.target.value);
-                    setDropdownOpen(true);
-                  }}
-                  onFocus={() => setDropdownOpen(true)}
-                  onKeyDown={e => {
-                    if (e.key === 'Escape') {
-                      setDropdownOpen(false);
-                      filterInputRef.current?.blur();
-                    }
-                  }}
-                />
-                {(filterName || focusTreeId) && (
+              <span className="tree-filter-label">Lọc từ người:</span>
+              {focusPerson ? (
+                <div className="tree-selected-pill">
+                  <Avatar person={focusPerson} size="small" />
+                  <div className="tree-selected-info">
+                    <strong>{focusPerson.fullName}</strong>
+                    <small>Đời {generationOf(focusPerson.id, members)}</small>
+                  </div>
                   <button
                     type="button"
-                    className="clear-filter-icon"
-                    title="Xóa bộ lọc"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setFilterName('');
+                    className="clear-tree-pill-btn"
+                    title="Xem lại toàn bộ cây"
+                    onClick={() => {
                       onFocusTreeId(null);
+                      setFilterName('');
                       setDropdownOpen(false);
-                      filterInputRef.current?.blur();
                     }}
                   >
                     <X size={14} />
                   </button>
-                )}
-                {dropdownOpen && matchingMembers.length > 0 && (
-                  <div className="tree-filter-dropdown">
-                    {matchingMembers.map(m => (
-                      <button
-                        type="button"
-                        key={m.id}
-                        className="tree-dropdown-item"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          onFocusTreeId(m.id);
-                          setFilterName(m.fullName);
-                          setDropdownOpen(false);
-                          filterInputRef.current?.blur();
-                        }}
-                      >
-                        <Avatar person={m} size="small" />
-                        <div className="tree-dropdown-item-info">
-                          <div className="tree-item-title-row">
-                            <strong>{m.fullName}</strong>
-                            <span className="tree-item-gen-tag">Đời {generationOf(m.id, members)}</span>
-                            {hasDuplicateName(m, members) && (
-                              <span className="duplicate-tag" title="Tên này có người trùng trong dòng họ">Trùng tên</span>
+                </div>
+              ) : (
+                <div className="tree-search-input-wrap">
+                  <Search size={15} />
+                  <input
+                    id="tree-filter-input"
+                    ref={filterInputRef}
+                    type="text"
+                    value={filterName}
+                    placeholder="Tìm tên để xem nhánh..."
+                    onChange={e => {
+                      setFilterName(e.target.value);
+                      setDropdownOpen(true);
+                    }}
+                    onFocus={() => setDropdownOpen(true)}
+                    onKeyDown={e => {
+                      if (e.key === 'Escape') {
+                        setDropdownOpen(false);
+                        filterInputRef.current?.blur();
+                      }
+                    }}
+                  />
+                  {filterName && (
+                    <button
+                      type="button"
+                      className="clear-filter-icon"
+                      title="Xóa tìm kiếm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setFilterName('');
+                        setDropdownOpen(false);
+                        filterInputRef.current?.blur();
+                      }}
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                  {dropdownOpen && matchingMembers.length > 0 && (
+                    <div className="tree-filter-dropdown">
+                      {matchingMembers.map(m => (
+                        <button
+                          type="button"
+                          key={m.id}
+                          className="tree-dropdown-item"
+                          onPointerDown={(e) => e.preventDefault()}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            onFocusTreeId(m.id);
+                            setFilterName('');
+                            setDropdownOpen(false);
+                            filterInputRef.current?.blur();
+                          }}
+                        >
+                          <Avatar person={m} size="small" />
+                          <div className="tree-dropdown-item-info">
+                            <div className="tree-item-title-row">
+                              <strong>{m.fullName}</strong>
+                              <span className="tree-item-gen-tag">Đời {generationOf(m.id, members)}</span>
+                              {hasDuplicateName(m, members) && (
+                                <span className="duplicate-tag" title="Tên này có người trùng trong dòng họ">Trùng tên</span>
+                              )}
+                            </div>
+                            {lineageOf(m, members) && (
+                              <span className="tree-item-lineage">{lineageOf(m, members)}</span>
                             )}
+                            <small className="tree-item-children-count">
+                              {childrenOf(m.id, members).length} con trực hệ
+                              {m.birthDate ? ` · (${displayYear(m.birthDate)}${m.deathDate ? ` – ${displayYear(m.deathDate)}` : ''})` : ''}
+                            </small>
                           </div>
-                          {lineageOf(m, members) && (
-                            <span className="tree-item-lineage">{lineageOf(m, members)}</span>
-                          )}
-                          <small className="tree-item-children-count">
-                            {childrenOf(m.id, members).length} con trực hệ
-                            {m.birthDate ? ` · (${displayYear(m.birthDate)}${m.deathDate ? ` – ${displayYear(m.deathDate)}` : ''})` : ''}
-                          </small>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {!focusTreeId && (
