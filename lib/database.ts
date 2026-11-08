@@ -24,10 +24,19 @@ export function database() {
 
 export async function ensureDatabase() {
   if (!initialized) {
-    initialized = database()`CREATE TABLE IF NOT EXISTS app_state (
-      key text PRIMARY KEY,
-      data jsonb NOT NULL
-    )`.then(() => undefined).catch(error => { initialized = null; throw error; });
+    initialized = (async () => {
+      const db = database();
+      await db`CREATE TABLE IF NOT EXISTS app_state (
+        key text PRIMARY KEY,
+        data jsonb NOT NULL
+      )`;
+      await db`CREATE TABLE IF NOT EXISTS app_files (
+        filename text PRIMARY KEY,
+        content_type text NOT NULL,
+        data bytea NOT NULL,
+        created_at timestamptz DEFAULT now()
+      )`;
+    })().then(() => undefined).catch(error => { initialized = null; throw error; });
   }
   await initialized;
 }

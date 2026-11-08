@@ -27,14 +27,18 @@ export type Member = {
 export type Shrine = { id: string; name: string; description: string; location: MapLocation; caretakerId: string | null; ceremony: LunarAnniversary | null; createdAt: string };
 export type ReminderSubscription = { id: string; recipientId: string; eventKey: string; daysBefore: number; enabled: boolean; createdAt: string };
 export type ReminderLog = { id: string; subscriptionId: string; eventDate: string; attemptedAt: string; status: 'pending' | 'sent' | 'failed'; detail: string };
+export type NewsCategory = 'gio' | 'le' | 'tiec' | 'khac';
 export type ContentRecord = {
   id: string;
   kind: 'document' | 'event';
+  category?: NewsCategory;
   title: string;
   description: string;
   date: string;
   location: string;
+  author?: string;
   fileUrl: string;
+  images?: string[];
   createdAt: string;
 };
 export type FamilyData = { members: Member[]; shrines: Shrine[]; reminders: ReminderSubscription[]; reminderLogs: ReminderLog[]; content: ContentRecord[]; updatedAt: string };

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowRight, BellRing, BookOpen, CalendarDays, ChevronDown, ChevronRight, ChevronUp, Download, Edit3, Heart, Landmark, Leaf, ListTree, MapPin, Menu, Minus, Move, Network, Plus, Search, ShieldCheck, Sprout, Trash2, TreePine, UserRound, Users, X } from 'lucide-react';
+import { ArrowRight, BellRing, BookOpen, CalendarDays, Camera, ChevronDown, ChevronRight, ChevronUp, Download, Edit3, Heart, Landmark, Leaf, ListTree, MapPin, Menu, Minus, Move, Network, Plus, Search, ShieldCheck, Sprout, Trash2, TreePine, UserRound, Users, X } from 'lucide-react';
 import type { ContentRecord, FamilyData, Member } from '@/lib/types';
 import { byName, bySeniority, childrenOf, descendantsOf, displayYear, fullDate, generationOf, hasDuplicateName, lineageOf, matchesMember } from '@/lib/family';
 import { addressFor } from '@/lib/kinship';
@@ -9,6 +9,7 @@ import ShrinesView from './ShrinesView';
 import MemorialView from './MemorialView';
 import MemberEditor from './MemberEditor';
 import MemberProfile from './MemberProfile';
+import NewsView, { NewsPostModal, CATEGORY_INFO, displayNewsDate } from './NewsView';
 
 type View = 'home' | 'tree' | 'members' | 'shrines' | 'memorial' | 'documents' | 'news' | 'contact';
 type FormState = Omit<Member, 'id' | 'createdAt'> & { id?: string };
@@ -16,9 +17,10 @@ type ContentFormState = Omit<ContentRecord, 'id' | 'createdAt'> & { id?: string 
 const emptyForm: FormState = { fullName: '', aliases: [], birthOrder: null, gender: 'Nam', birthDate: '', deathDate: '', anniversary: null, birthPlace: '', currentPlace: '', home: { address: '', latitude: null, longitude: null }, homePublic: false, zaloPhone: '', zaloConsent: false, occupation: '', biography: '', fatherId: null, motherId: null, spouseIds: [], avatar: '' };
 const nav: { id: View; label: string }[] = [
   { id: 'home', label: 'Trang chủ' }, { id: 'tree', label: 'Gia phả' }, { id: 'members', label: 'Thành viên' },
-  { id: 'shrines', label: 'Nhà thờ' }, { id: 'memorial', label: 'Ngày giỗ' }, { id: 'contact', label: 'Liên hệ' }
+  { id: 'shrines', label: 'Nhà thờ' }, { id: 'memorial', label: 'Ngày giỗ' }, { id: 'news', label: 'Tin tức · Hoạt động' },
+  { id: 'contact', label: 'Liên hệ' }
 ];
-const pageTitle: Record<View, string> = { home: 'Trang chủ', tree: 'Cây gia phả', members: 'Thành viên dòng họ', shrines: 'Nhà thờ dòng họ', memorial: 'Ngày giỗ âm lịch', documents: 'Tư liệu dòng họ', news: 'Tin tức & sự kiện', contact: 'Liên hệ' };
+const pageTitle: Record<View, string> = { home: 'Trang chủ', tree: 'Cây gia phả', members: 'Thành viên dòng họ', shrines: 'Nhà thờ dòng họ', memorial: 'Ngày giỗ âm lịch', documents: 'Tư liệu dòng họ', news: 'Tin tức & Hoạt động dòng họ', contact: 'Liên hệ' };
 
 function initials(name: string) { return name.split(' ').slice(-2).map(x => x[0]).join('').toUpperCase(); }
 function Avatar({ person, size = 'normal' }: { person: Member; size?: 'normal' | 'large' | 'small' }) {
@@ -42,6 +44,7 @@ export default function FamilyApp() {
   const [authenticated, setAuthenticated] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
   const [contentEditing, setContentEditing] = useState<ContentFormState | null>(null);
+  const [newsEditing, setNewsEditing] = useState<Partial<ContentRecord> | null>(null);
   const [focusTreeId, setFocusTreeId] = useState<string | null>(null);
   const members = data?.members || [];
   const selected = members.find(m => m.id === selectedId) || null;
@@ -133,6 +136,7 @@ export default function FamilyApp() {
             { icon: <Users />, name: 'THÀNH VIÊN', text: 'Danh sách con cháu trong dòng họ', target: 'members' as View },
             { icon: <Landmark />, name: 'NHÀ THỜ', text: 'Vị trí và ngày giỗ tại từng nơi', target: 'shrines' as View },
             { icon: <BellRing />, name: 'NGÀY GIỖ', text: 'Lịch âm và nhắc giỗ Zalo', target: 'memorial' as View },
+            { icon: <Camera />, name: 'TIN TỨC & ẢNH HỌ', text: 'Hình ảnh giỗ, đi lễ, tiệc dòng họ', target: 'news' as View },
             { icon: <Leaf />, name: 'LIÊN HỆ', text: 'Góp ý, liên hệ với ban quản trị', target: 'contact' as View }
           ].map(x => <button className="quick-item" key={x.name} onClick={() => go(x.target)}><span className="quick-icon">{x.icon}</span><strong>{x.name}</strong><span>{x.text}</span></button>)}
         </div>
@@ -140,6 +144,76 @@ export default function FamilyApp() {
       <section className="intro-section container">
         <div className="intro-art"><div className="round-art"><TreePine size={92} strokeWidth={1.2} /><span>Phúc đức lưu truyền</span></div><span className="flower flower-one">✿</span><span className="flower flower-two">✿</span></div>
         <div className="intro-copy"><span className="section-kicker">CỘI NGUỒN VÀ KẾT NỐI</span><h2>Mỗi nhánh cây là một câu chuyện</h2><Ornament /><p>Gia phả giúp chúng ta biết mình đến từ đâu, hiểu mối dây gắn bó giữa các thế hệ và gìn giữ những câu chuyện quý giá cho mai sau.</p><p>Hãy bắt đầu từ một cái tên, khám phá những người thân trong dòng họ và cùng bổ sung thông tin để cây gia đình ngày càng trọn vẹn.</p><button className="text-link" onClick={() => go('members')}>Gặp gỡ các thành viên <ArrowRight size={18} /></button></div>
+      </section>
+      <section className="home-news-section">
+        <div className="container">
+          <div className="home-news-header">
+            <div>
+              <span className="section-kicker">NHỊP SỐNG DÒNG HỌ</span>
+              <h2>Hình ảnh & Tin tức mới nhất</h2>
+              <p>Khoảnh khắc những ngày giỗ, đi lễ dâng hương và bữa tiệc họp mặt của con cháu Huỳnh Tấn Tộc.</p>
+            </div>
+            <div className="toolbar-actions">
+              <button className="outline-btn" onClick={() => go('news')}>
+                Xem tất cả ({data?.content?.filter(c => c.kind === 'event').length || 0}) <ArrowRight size={16} />
+              </button>
+              <button className="primary-btn" onClick={() => setNewsEditing({})}>
+                <Camera size={16} /> Đăng ảnh mới
+              </button>
+            </div>
+          </div>
+
+          {data?.content?.filter(c => c.kind === 'event').length ? (
+            <div className="home-news-grid">
+              {data.content
+                .filter(c => c.kind === 'event')
+                .sort((a, b) => (b.date || b.createdAt).localeCompare(a.date || a.createdAt))
+                .slice(0, 3)
+                .map(item => {
+                  const cat = item.category || 'khac';
+                  const info = CATEGORY_INFO[cat];
+                  const Icon = info.icon;
+                  const thumb = item.fileUrl || (item.images && item.images[0]) || '';
+                  return (
+                    <div key={item.id} className="home-news-card" onClick={() => go('news')}>
+                      <div className="home-news-thumb">
+                        {thumb ? (
+                          <img src={thumb} alt={item.title} loading="lazy" />
+                        ) : (
+                          <Camera size={38} />
+                        )}
+                        <span
+                          className="home-news-badge"
+                          style={{ color: info.color, backgroundColor: info.bg }}
+                        >
+                          <Icon size={12} />
+                          {info.shortLabel}
+                        </span>
+                      </div>
+                      <div className="home-news-body">
+                        <h3>{item.title}</h3>
+                        {item.description && <p>{item.description}</p>}
+                        <span className="home-news-date">
+                          <CalendarDays size={12} />
+                          {displayNewsDate(item.date)}
+                          {item.author && ` · ${item.author}`}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          ) : (
+            <div className="empty-news-state">
+              <div className="empty-icon-circle"><Camera size={36} /></div>
+              <h3>Chưa có bài viết nào</h3>
+              <p>Hãy là người đầu tiên chia sẻ hình ảnh ngày giỗ, đi lễ hoặc tiệc họp họ của gia đình!</p>
+              <button className="primary-btn" onClick={() => setNewsEditing({})}>
+                <Plus size={16} /> Đăng ảnh & Tin tức đầu tiên
+              </button>
+            </div>
+          )}
+        </div>
       </section>
       <section className="home-numbers"><div className="container"><div className="section-center"><span className="section-kicker">GIA PHẢ SỐ</span><h2>Gìn giữ ký ức qua từng thế hệ</h2><Ornament /></div><div className="number-grid"><div><strong>{members.length}</strong><span>Thành viên trong cây</span></div><div><strong>{generations}</strong><span>Thế hệ trong cây</span></div><div><strong>{members.filter(m => !m.fatherId && !m.motherId).length}</strong><span>Nhánh khởi đầu</span></div></div><p className="demo-note">Dữ liệu ban đầu là ví dụ minh họa; hãy thay bằng thông tin gia đình đã được xác nhận.</p></div></section>
     </>}
@@ -154,14 +228,39 @@ export default function FamilyApp() {
       {!loading && !serverError && data && view === 'shrines' && <ShrinesView data={data} authenticated={authenticated} onData={setData} onLogin={() => setLoginOpen(true)} onToast={setToast} />}
       {!loading && !serverError && data && view === 'memorial' && <MemorialView data={data} authenticated={authenticated} onData={setData} onLogin={() => setLoginOpen(true)} onToast={setToast} />}
       {view === 'documents' && <ContentView kind="document" records={data?.content || []} authenticated={authenticated} add={() => authenticated ? setContentEditing({ kind: 'document', title: '', description: '', date: '', location: '', fileUrl: '' }) : setLoginOpen(true)} edit={record => setContentEditing({ ...record })} remove={removeContent} />}
-      {view === 'news' && <ContentView kind="event" records={data?.content || []} authenticated={authenticated} add={() => authenticated ? setContentEditing({ kind: 'event', title: '', description: '', date: '', location: '', fileUrl: '' }) : setLoginOpen(true)} edit={record => setContentEditing({ ...record })} remove={removeContent} />}
+      {view === 'news' && (
+        <NewsView
+          records={data?.content || []}
+          authenticated={authenticated}
+          onOpenCreate={() => setNewsEditing({})}
+          onOpenEdit={record => setNewsEditing(record)}
+          onRemove={removeContent}
+        />
+      )}
       {view === 'contact' && <ContactView />}
     </main>
 
-    <footer className="footer"><div className="container footer-grid"><div><div className="footer-brand"><span className="brand-seal">Tổ</span><strong>Gia phả Huỳnh Tấn</strong></div><p>Gìn giữ cội nguồn, kết nối hôm nay<br />và trao truyền cho mai sau.</p></div><div><h3>Khám phá</h3><button onClick={() => go('tree')}>Cây gia phả</button><button onClick={() => go('members')}>Thành viên</button><button onClick={() => go('shrines')}>Nhà thờ</button><button onClick={() => go('memorial')}>Ngày giỗ</button></div><div><h3>Kết nối</h3><button onClick={() => go('documents')}>Tư liệu</button><button onClick={() => go('news')}>Tin tức · Sự kiện</button><button onClick={() => go('contact')}>Liên hệ</button></div><div className="footer-mark">福</div></div><div className="container footer-bottom">© {new Date().getFullYear()} Gia phả Huỳnh Tấn · Gìn giữ truyền thống gia đình</div></footer>
+    <footer className="footer"><div className="container footer-grid"><div><div className="footer-brand"><span className="brand-seal">Tổ</span><strong>Gia phả Huỳnh Tấn</strong></div><p>Gìn giữ cội nguồn, kết nối hôm nay<br />và trao truyền cho mai sau.</p></div><div><h3>Khám phá</h3><button onClick={() => go('tree')}>Cây gia phả</button><button onClick={() => go('members')}>Thành viên</button><button onClick={() => go('shrines')}>Nhà thờ</button><button onClick={() => go('memorial')}>Ngày giỗ</button></div><div><h3>Kết nối</h3><button onClick={() => go('documents')}>Tư liệu</button><button onClick={() => go('news')}>Tin tức · Hoạt động</button><button onClick={() => go('contact')}>Liên hệ</button></div><div className="footer-mark">福</div></div><div className="container footer-bottom">© {new Date().getFullYear()} Gia phả Huỳnh Tấn · Gìn giữ truyền thống gia đình</div></footer>
     {selected && <MemberProfile person={selected} members={members} authenticated={authenticated} close={() => setSelectedId(null)} openPerson={openPerson} edit={() => { setSelectedId(null); setEditing({ ...selected }); }} remove={() => remove(selected)} goTree={() => { const id = selected.id; setSelectedId(null); setFocusTreeId(id); go('tree'); }} />}
     {editing && <MemberEditor initial={editing} members={members} close={() => setEditing(null)} save={save} />}
     {contentEditing && <ContentForm initial={contentEditing} close={() => setContentEditing(null)} save={saveContent} />}
+    {newsEditing && (
+      <NewsPostModal
+        initial={newsEditing}
+        close={() => setNewsEditing(null)}
+        onSaved={(saved, fullData) => {
+          if (fullData?.members) {
+            setData(fullData);
+          } else {
+            setData(prev => prev ? {
+              ...prev,
+              content: [saved, ...prev.content.filter(c => c.id !== saved.id)]
+            } : prev);
+          }
+          setToast('Đã lưu bài viết và hình ảnh thành công!');
+        }}
+      />
+    )}
     {loginOpen && <LoginModal close={() => setLoginOpen(false)} success={() => { setAuthenticated(true); setLoginOpen(false); setToast('Đã đăng nhập quản trị.'); }} />}
     {toast && <div className="toast" role="status">{toast}</div>}
   </>;

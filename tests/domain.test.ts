@@ -170,3 +170,13 @@ test('phân biệt người trùng tên qua cha mẹ và ông bà', () => {
   assert.ok(lineageOf(thuy1, allMembers).includes('Huỳnh Tấn Diện'));
   assert.ok(lineageOf(thuy2, allMembers).includes('Huỳnh Tấn Dũng'));
 });
+
+test('tính năng tin tức & hoạt động dòng họ (giỗ, đi lễ, tiệc họ)', () => {
+  const { displayNewsDate, CATEGORY_INFO } = require('../components/NewsView');
+  assert.equal(displayNewsDate('2026-02-15'), 'Ngày 15 tháng 2, 2026');
+  assert.equal(displayNewsDate('2026-11-20'), 'Ngày 20 tháng 11, 2026');
+  assert.equal(CATEGORY_INFO.gio.label, 'Lễ giỗ dòng họ');
+  assert.equal(CATEGORY_INFO.le.label, 'Đi lễ · Tảo mộ');
+  assert.equal(CATEGORY_INFO.tiec.label, 'Bữa tiệc · Họp họ');
+  assert.equal(CATEGORY_INFO.khac.label, 'Tin tức · Khác');
+});
