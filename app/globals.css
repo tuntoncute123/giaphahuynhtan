@@ -54,6 +54,13 @@ h2{font-family:'Charm',cursive;font-weight:700;line-height:1.34;letter-spacing:-
   .hero-overlay{background:none}
 }
 
+@media(max-width:420px){
+  .hero-content{height:100%;padding:0;justify-content:center}
+  .hero h1{font-size:clamp(40px,12vw,50px);line-height:1.07;margin:15px 0 18px}
+  .hero p{font-size:14px;line-height:1.4;margin-bottom:18px}
+  .brush-btn{font-size:14px;padding:12px 20px}
+}
+
 /* Lời mời cài gia phả trên điện thoại */
 .pwa-install-area{position:relative;z-index:95}
 .pwa-install-card{position:fixed;left:50%;bottom:max(14px,env(safe-area-inset-bottom));transform:translateX(-50%);width:min(410px,calc(100% - 28px));max-height:calc(100dvh - 28px);overflow:auto;border:1px solid #d8bd80;border-radius:18px;background:#fff9ea;box-shadow:0 17px 55px rgba(30,34,21,.28);padding:18px 19px 17px;color:#3a4937}
