@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowRight, BellRing, BookOpen, CalendarDays, ChevronDown, ChevronRight, ChevronUp, Download, Edit3, Heart, Landmark, Leaf, ListTree, MapPin, Menu, Minus, Move, Network, Plus, Search, ShieldCheck, Sprout, Trash2, TreePine, UserRound, Users, X } from 'lucide-react';
 import type { ContentRecord, FamilyData, Member } from '@/lib/types';
-import { byName, bySeniority, childrenOf, descendantsOf, displayYear, fullDate, generationOf, matchesMember } from '@/lib/family';
+import { byName, bySeniority, childrenOf, descendantsOf, displayYear, fullDate, generationOf, hasDuplicateName, lineageOf, matchesMember } from '@/lib/family';
 import { addressFor } from '@/lib/kinship';
 import ShrinesView from './ShrinesView';
 import MemorialView from './MemorialView';
@@ -219,10 +219,15 @@ function MemberSearchSelect({
           <div className="selected-member-pill" onClick={() => setIsOpen(true)}>
             <Avatar person={selectedMember} size="small" />
             <div className="selected-info">
-              <strong>{selectedMember.fullName}</strong>
-              <small>
-                Đời {generationOf(selectedMember.id, members)}
-                {selectedMember.birthDate ? ` (${displayYear(selectedMember.birthDate)})` : ''}
+              <div className="selected-title-row">
+                <strong>{selectedMember.fullName}</strong>
+                <span className="selected-gen-badge">Đời {generationOf(selectedMember.id, members)}</span>
+                {hasDuplicateName(selectedMember, members) && (
+                  <span className="duplicate-tag" title="Tên này có người trùng trong dòng họ">Trùng tên</span>
+                )}
+              </div>
+              <small className="selected-lineage">
+                {lineageOf(selectedMember, members) || (selectedMember.birthDate ? `(${displayYear(selectedMember.birthDate)})` : '')}
               </small>
             </div>
             <button
@@ -284,11 +289,19 @@ function MemberSearchSelect({
                 >
                   <Avatar person={m} size="small" />
                   <div className="item-text">
-                    <strong>{m.fullName}</strong>
-                    <small>
-                      Đời {generationOf(m.id, members)}
-                      {m.aliases?.length ? ` · Biệt danh: ${m.aliases.join(', ')}` : ''}
-                      {m.birthDate ? ` · (${displayYear(m.birthDate)})` : ''}
+                    <div className="item-title-row">
+                      <strong>{m.fullName}</strong>
+                      <span className="item-gen-tag">Đời {generationOf(m.id, members)}</span>
+                      {hasDuplicateName(m, members) && (
+                        <span className="duplicate-tag" title="Tên này có người trùng trong dòng họ">Trùng tên</span>
+                      )}
+                    </div>
+                    {lineageOf(m, members) && (
+                      <span className="item-lineage-text">{lineageOf(m, members)}</span>
+                    )}
+                    <small className="item-meta-sub">
+                      {m.aliases?.length ? `Biệt danh: ${m.aliases.join(', ')} · ` : ''}
+                      {m.birthDate ? `(${displayYear(m.birthDate)}${m.deathDate ? ` – ${displayYear(m.deathDate)}` : ''})` : ''}
                     </small>
                   </div>
                 </button>
@@ -768,9 +781,21 @@ function TreeView({
                         }}
                       >
                         <Avatar person={m} size="small" />
-                        <div>
-                          <strong>{m.fullName}</strong>
-                          <small>Đời thứ {generationOf(m.id, members)} · {childrenOf(m.id, members).length} con trực hệ</small>
+                        <div className="tree-dropdown-item-info">
+                          <div className="tree-item-title-row">
+                            <strong>{m.fullName}</strong>
+                            <span className="tree-item-gen-tag">Đời {generationOf(m.id, members)}</span>
+                            {hasDuplicateName(m, members) && (
+                              <span className="duplicate-tag" title="Tên này có người trùng trong dòng họ">Trùng tên</span>
+                            )}
+                          </div>
+                          {lineageOf(m, members) && (
+                            <span className="tree-item-lineage">{lineageOf(m, members)}</span>
+                          )}
+                          <small className="tree-item-children-count">
+                            {childrenOf(m.id, members).length} con trực hệ
+                            {m.birthDate ? ` · (${displayYear(m.birthDate)}${m.deathDate ? ` – ${displayYear(m.deathDate)}` : ''})` : ''}
+                          </small>
                         </div>
                       </button>
                     ))}

@@ -17,6 +17,48 @@ export function matchesMember(person: Member, query: string) {
   const needle = normalizeSearch(query);
   return !needle || [person.fullName, ...person.aliases].some(value => normalizeSearch(value).includes(needle));
 }
+
+export function hasDuplicateName(person: Member, members: Member[]): boolean {
+  const norm = normalizeSearch(person.fullName);
+  return members.filter(m => normalizeSearch(m.fullName) === norm).length > 1;
+}
+
+export function lineageOf(person: Member, members: Member[]): string {
+  const parts: string[] = [];
+  const father = person.fatherId ? members.find(m => m.id === person.fatherId) : null;
+  const mother = person.motherId ? members.find(m => m.id === person.motherId) : null;
+
+  if (father && mother) {
+    parts.push(`Con ông ${father.fullName} & bà ${mother.fullName}`);
+  } else if (father) {
+    parts.push(`Con ông ${father.fullName}`);
+  } else if (mother) {
+    parts.push(`Con bà ${mother.fullName}`);
+  }
+
+  if (father && father.fatherId) {
+    const grandfather = members.find(m => m.id === father.fatherId);
+    if (grandfather) {
+      parts.push(`cháu cụ ${grandfather.fullName}`);
+    }
+  }
+
+  if (!father && !mother && person.spouseIds && person.spouseIds.length > 0) {
+    const spouses = person.spouseIds
+      .map(id => members.find(m => m.id === id))
+      .filter((s): s is Member => !!s);
+    if (spouses.length > 0) {
+      const spouseTitles = spouses.map(s => `${s.gender === 'Nam' ? 'ông' : 'bà'} ${s.fullName}`).join(', ');
+      parts.push(`${person.gender === 'Nữ' ? 'Vợ' : 'Chồng'} ${spouseTitles}`);
+    }
+  }
+
+  if (parts.length === 0 && generationOf(person.id, members) === 1) {
+    parts.push('Cụ Thủy tổ dòng họ');
+  }
+
+  return parts.join(' · ');
+}
 export function normalizeZaloPhone(value: string): string {
   const digits = value.replace(/\D/g, '');
   if (/^0[35789]\d{8}$/.test(digits)) return `84${digits.slice(1)}`;

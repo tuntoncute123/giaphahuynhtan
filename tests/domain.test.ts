@@ -143,3 +143,30 @@ test('cây gia phả sắp xếp anh từ trái qua phải rồi mới đến em
   // Cụ Liên gọi cụ Tu (con thứ 3, birthOrder 3): Anh Tư
   assert.equal(addressFor('ht-lien', 'ht-tu', allMembers).term, 'Anh Tư');
 });
+
+test('phân biệt người trùng tên qua cha mẹ và ông bà', () => {
+  const file = `${process.cwd()}/data/family.json`;
+  const { readFileSync } = require('node:fs');
+  const familyData = JSON.parse(readFileSync(file, 'utf8'));
+  const allMembers: Member[] = familyData.members;
+  const { hasDuplicateName, lineageOf } = require('../lib/family');
+
+  const toan1 = allMembers.find(m => m.id === 'ht-a2-toan')!;
+  const toan2 = allMembers.find(m => m.id === 'ht-c5-toan')!;
+  assert.equal(hasDuplicateName(toan1, allMembers), true);
+  assert.equal(hasDuplicateName(toan2, allMembers), true);
+
+  const lineage1 = lineageOf(toan1, allMembers);
+  const lineage2 = lineageOf(toan2, allMembers);
+  assert.ok(lineage1.includes('Huỳnh Tấn Lan'));
+  assert.ok(lineage1.includes('Huỳnh Tấn Ka'));
+  assert.ok(lineage2.includes('Huỳnh Tấn Tân'));
+  assert.ok(lineage2.includes('Huỳnh Tấn Thận'));
+  assert.notEqual(lineage1, lineage2);
+
+  const thuy1 = allMembers.find(m => m.id === 'ht-a2-dien-w')!;
+  const thuy2 = allMembers.find(m => m.id === 'ht-c5-dung-w')!;
+  assert.equal(hasDuplicateName(thuy1, allMembers), true);
+  assert.ok(lineageOf(thuy1, allMembers).includes('Huỳnh Tấn Diện'));
+  assert.ok(lineageOf(thuy2, allMembers).includes('Huỳnh Tấn Dũng'));
+});
