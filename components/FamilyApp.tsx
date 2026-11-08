@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowRight, BellRing, BookOpen, CalendarDays, Camera, ChevronDown, ChevronRight, ChevronUp, Download, Edit3, Heart, Landmark, Leaf, ListTree, MapPin, Menu, Minus, Move, Network, Plus, Search, ShieldCheck, Sprout, Trash2, TreePine, UserRound, Users, X } from 'lucide-react';
+import { ArrowRight, BellRing, BookOpen, CalendarDays, Camera, ChevronDown, ChevronRight, ChevronUp, Download, Edit3, Heart, Landmark, Leaf, ListTree, MapPin, Menu, Minus, Move, Network, Phone, Plus, Search, ShieldCheck, Sprout, Trash2, TreePine, UserRound, Users, X } from 'lucide-react';
 import type { ContentRecord, FamilyData, Member } from '@/lib/types';
 import { byName, bySeniority, childrenOf, descendantsOf, displayYear, fullDate, generationOf, hasDuplicateName, lineageOf, matchesMember } from '@/lib/family';
 import { addressFor } from '@/lib/kinship';
@@ -1089,7 +1089,71 @@ function LoginModal({ close, success }: { close: () => void; success: () => void
   return <div className="modal-backdrop" onMouseDown={close}><form className="login-modal" role="dialog" aria-modal="true" aria-label="Đăng nhập quản trị" onMouseDown={e => e.stopPropagation()} onSubmit={submit}><button type="button" className="modal-close" onClick={close} aria-label="Đóng"><X size={20} /></button><div className="login-mark">Tổ</div><span className="section-kicker">QUẢN TRỊ GIA PHẢ</span><h2>Đăng nhập</h2><p>Nhập tài khoản quản trị để bổ sung và chỉnh sửa hồ sơ dòng họ.</p><label>Tên đăng nhập<input type="text" autoFocus required autoComplete="username" value={username} onChange={e => setUsername(e.target.value)} placeholder="Nhập tên đăng nhập" /></label><label>Mật khẩu quản trị<input type="password" required autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Nhập mật khẩu" /></label>{error && <div className="form-error" role="alert">{error}</div>}<button className="primary-btn" disabled={busy} type="submit">{busy ? 'Đang đăng nhập...' : 'Đăng nhập'} <ArrowRight size={16} /></button></form></div>;
 }
 
-function ContactView() { return <section className="contact-section container"><div><span className="section-kicker">CÙNG GÌN GIỮ GIA PHẢ</span><h2>Mỗi thông tin bạn chia sẻ đều quý giá</h2><Ornament /><p>Nếu bạn có thông tin cần bổ sung hoặc chỉnh sửa, hãy liên hệ người phụ trách gia phả của gia đình. Mọi tư liệu nên được xác nhận trước khi đưa vào hồ sơ chính thức.</p><div className="contact-points"><div><ShieldCheck size={24} /><span><strong>Xác minh thông tin</strong><small>Đối chiếu tên, ngày tháng và mối quan hệ</small></span></div><div><Heart size={24} /><span><strong>Trân trọng kỷ niệm</strong><small>Lưu giữ câu chuyện và hình ảnh gia đình</small></span></div><div><Users size={24} /><span><strong>Kết nối các nhánh</strong><small>Cùng hoàn thiện cây gia phả qua nhiều thế hệ</small></span></div></div></div><div className="contact-card"><div className="contact-seal">福</div><h3>Góp sức vun bồi cội nguồn</h3><p>Thông tin liên hệ của ban quản trị có thể được cập nhật khi dòng họ chỉ định người phụ trách.</p><div className="contact-deco"><Leaf /><span>Gia hòa vạn sự hưng</span><Leaf /></div></div></section>; }
+function ContactView() {
+  return (
+    <section className="contact-section container">
+      <div>
+        <span className="section-kicker">CÙNG GÌN GIỮ GIA PHẢ</span>
+        <h2>Mỗi thông tin bạn chia sẻ đều quý giá</h2>
+        <Ornament />
+        <p>
+          Nếu bạn có thông tin cần bổ sung, chỉnh sửa hoặc cung cấp tư liệu gia đình, xin vui lòng liên hệ trực tiếp người phụ trách gia phả của dòng họ. Mọi tư liệu đều được ghi nhận và đối chiếu cẩn trọng.
+        </p>
+        <div className="contact-points">
+          <div className="contact-point-highlight">
+            <Phone size={24} />
+            <span>
+              <strong>Liên hệ con cháu trong nhà: Huỳnh Tấn Toàn</strong>
+              <small>Số điện thoại: <a href="tel:0849632852" className="contact-inline-phone">0849 632 852</a> (Gọi điện hoặc nhắn tin bổ sung gia phả)</small>
+            </span>
+          </div>
+          <div>
+            <ShieldCheck size={24} />
+            <span>
+              <strong>Xác minh thông tin</strong>
+              <small>Đối chiếu tên, ngày tháng và mối quan hệ</small>
+            </span>
+          </div>
+          <div>
+            <Heart size={24} />
+            <span>
+              <strong>Trân trọng kỷ niệm</strong>
+              <small>Lưu giữ câu chuyện và hình ảnh gia đình</small>
+            </span>
+          </div>
+          <div>
+            <Users size={24} />
+            <span>
+              <strong>Kết nối các nhánh</strong>
+              <small>Cùng hoàn thiện cây gia phả qua nhiều thế hệ</small>
+            </span>
+          </div>
+        </div>
+      </div>
+      <div className="contact-card">
+        <div className="contact-seal">福</div>
+        <h3>Góp sức vun bồi cội nguồn</h3>
+        <p>Mọi thông tin bổ sung, hình ảnh hoặc đính chính về gia phả xin vui lòng liên hệ:</p>
+
+        <div className="contact-person-box">
+          <span className="contact-person-badge">Người phụ trách liên hệ</span>
+          <strong className="contact-person-name">Huỳnh Tấn Toàn</strong>
+          <span className="contact-person-role">Con cháu trong nhà</span>
+          <a href="tel:0849632852" className="contact-phone-btn" title="Bấm để gọi điện">
+            <Phone size={18} />
+            <span>0849 632 852</span>
+          </a>
+        </div>
+
+        <div className="contact-deco">
+          <Leaf />
+          <span>Gia hòa vạn sự hưng</span>
+          <Leaf />
+        </div>
+      </div>
+    </section>
+  );
+}
 
 function ContentView({ kind, records, authenticated, add, edit, remove }: { kind: ContentRecord['kind']; records: ContentRecord[]; authenticated: boolean; add: () => void; edit: (record: ContentRecord) => void; remove: (record: ContentRecord) => void }) {
   const items = records.filter(record => record.kind === kind).sort((a, b) => (b.date || b.createdAt).localeCompare(a.date || a.createdAt));

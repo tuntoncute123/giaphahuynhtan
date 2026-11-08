@@ -1221,3 +1221,79 @@ h2{font-family:'Charm',cursive;font-weight:700;line-height:1.34;letter-spacing:-
     margin-left: 0;
   }
 }
+
+/* Thông tin liên hệ con cháu trong nhà */
+.contact-point-highlight {
+  background: #f8f1df;
+  border: 1px solid #e5d3ab;
+  padding: 12px 14px;
+  border-radius: 12px;
+}
+.contact-point-highlight svg {
+  color: #1a4f2e;
+}
+.contact-inline-phone {
+  color: #1a4f2e;
+  font-weight: 800;
+  text-decoration: underline;
+}
+.contact-person-box {
+  background: rgba(0, 0, 0, 0.24);
+  border: 1px solid rgba(223, 193, 125, 0.45);
+  border-radius: 14px;
+  padding: 18px 22px;
+  margin: 16px auto 24px;
+  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+.contact-person-badge {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #f7cf87;
+  background: rgba(223, 193, 125, 0.18);
+  padding: 3px 11px;
+  border-radius: 20px;
+}
+.contact-person-name {
+  font-size: 22px;
+  font-weight: 800;
+  color: #fffdf8;
+  letter-spacing: 0.2px;
+}
+.contact-person-role {
+  font-size: 13px;
+  color: #e5d4b4;
+  font-style: italic;
+}
+.contact-phone-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  background: #c79545;
+  color: #123722 !important;
+  font-weight: 800;
+  font-size: 16px;
+  padding: 10px 22px;
+  border-radius: 25px;
+  text-decoration: none;
+  margin-top: 8px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
+  transition: all 0.2s ease;
+}
+.contact-phone-btn:hover {
+  background: #dfb164;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.38);
+  color: #0d2818 !important;
+}
+.contact-phone-btn svg {
+  color: #123722;
+  flex-shrink: 0;
+}
