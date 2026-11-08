@@ -7,6 +7,8 @@ import { sendZaloReminder, zaloConfigStatus } from '@/lib/zalo';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export async function GET(request: Request) {
+  const secret = process.env.CRON_SECRET;
+  if (secret && request.headers.get('authorization') === `Bearer ${secret}`) return runReminders();
   if (!isAdmin(request)) return NextResponse.json({ error: 'Vui lòng đăng nhập quản trị.' }, { status: 401 });
   const data = await readFamily();
   return NextResponse.json({ ...zaloConfigStatus(), subscriptions: data.reminders.length, sent: data.reminderLogs.filter(log => log.status === 'sent').length });
@@ -14,6 +16,9 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const secret = process.env.CRON_SECRET;
   if (!secret || request.headers.get('authorization') !== `Bearer ${secret}`) return NextResponse.json({ error: 'Không được phép chạy lịch nhắc.' }, { status: 401 });
+  return runReminders();
+}
+async function runReminders() {
   const status = zaloConfigStatus();
   if (!status.ready) return NextResponse.json({ error: 'Zalo chưa được cấu hình.', missing: status.missing }, { status: 503 });
   const today = vietnamToday(); const year = Number(today.slice(0, 4));

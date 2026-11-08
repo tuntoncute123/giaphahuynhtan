@@ -21,7 +21,7 @@ Mở http://localhost:3000. Đăng nhập bằng `ADMIN_USERNAME` và `ADMIN_PAS
 - Ghi địa chỉ, tọa độ nhà của thành viên; có thể chọn công khai hoặc chỉ cho quản trị viên xem. Hồ sơ có nút chỉ đường bằng Google Maps. Số Zalo và quyền đồng ý nhận tin chỉ hiển thị cho quản trị viên.
 - Quản lý nhiều nhà thờ với địa chỉ, tọa độ, bản đồ, nút chỉ đường bằng Google Maps, người phụ trách và ngày giỗ hoặc lễ cúng riêng.
 - Ghi ngày mất dương lịch và tự suy ra ngày giỗ âm lịch; có thể nhập ngày giỗ âm riêng. Lịch giỗ hiển thị ngày dương tương ứng của năm tới và cho phép đặt ngày nhắc trước từ 0 đến 30 ngày.
-- Quản trị tư liệu, sự kiện và ảnh đại diện; tải JPG, PNG, WebP hoặc PDF tối đa 5 MB. Xuất dữ liệu JSON để sao lưu.
+- Quản trị tư liệu, sự kiện và ảnh đại diện; tải JPG, PNG, WebP hoặc PDF tối đa 4 MB. Xuất dữ liệu JSON để sao lưu.
 
 ## Thêm website vào màn hình chính
 
@@ -39,9 +39,9 @@ Ngày mất dương lịch được quy đổi theo lịch âm Việt Nam. Nếu
 
 Khi đã có các thông tin đó:
 
-1. Điền `ZALO_APP_ID`, `ZALO_APP_SECRET`, `ZALO_REFRESH_TOKEN`, `ZALO_TEMPLATE_ID` và `CRON_SECRET` trong `.env.local` trên máy chủ. `ZALO_TEMPLATE_DATA_MAP` là JSON ánh xạ các trường `recipient`, `event`, `lunarDate`, `solarDate`, `location`, `daysBefore` sang đúng tên placeholder của mẫu đã được duyệt. Chỉ ánh xạ các trường thực sự có trong mẫu; ít nhất một trường phải được ánh xạ.
+1. Điền `ZALO_APP_ID`, `ZALO_APP_SECRET`, `ZALO_REFRESH_TOKEN`, `ZALO_TEMPLATE_ID` và `CRON_SECRET` trong môi trường chạy ứng dụng. `ZALO_TEMPLATE_DATA_MAP` là JSON ánh xạ các trường `recipient`, `event`, `lunarDate`, `solarDate`, `location`, `daysBefore` sang đúng tên placeholder của mẫu đã được duyệt. Chỉ ánh xạ các trường thực sự có trong mẫu; ít nhất một trường phải được ánh xạ.
 2. Trong hồ sơ thành viên nhận tin, nhập số Zalo và bật xác nhận đồng ý nhận nhắc giỗ. Vào **Ngày giỗ** để đặt lịch cho từng người và từng sự kiện.
-3. Chạy tác vụ hằng ngày lúc 08:00 giờ Việt Nam. Ví dụ trên Linux, khi máy chủ dùng múi giờ Việt Nam:
+3. Trên Vercel, `vercel.json` đã đặt lịch lúc **01:00 UTC = 08:00 Việt Nam** qua GET `/api/reminders/run`. Vercel sẽ gửi `Authorization: Bearer <CRON_SECRET>` khi biến này được cấu hình. Trên máy Linux riêng, có thể chạy tác vụ hằng ngày khi máy chủ dùng múi giờ Việt Nam:
 
    ```cron
    0 8 * * * cd /duong-dan/toi/giaphahuynhtan && /usr/bin/node --env-file=.env.local scripts/run-reminders.mjs >> /var/log/giapha-reminders.log 2>&1
@@ -49,10 +49,18 @@ Khi đã có các thông tin đó:
 
    Đặt `APP_URL` trong `.env.local` trỏ tới ứng dụng đang chạy; dùng HTTPS nếu tác vụ chạy từ máy khác. Có thể chạy thủ công bằng `node --env-file=.env.local scripts/run-reminders.mjs`. Tác vụ báo lỗi khi cấu hình thiếu hoặc có tin gửi thất bại. Mỗi lần nhắc được ghi trạng thái để hạn chế gửi trùng khi tác vụ chạy lại.
 
-Không đưa `.env.local` hoặc `data/zalo-tokens.json` lên kho mã nguồn. Token đã làm mới được lưu trên ổ đĩa máy chủ tại `data/zalo-tokens.json`; cần sao lưu và bảo vệ thư mục `data`.
+Không đưa `.env.local` hoặc `data/zalo-tokens.json` lên kho mã nguồn. Khi có `DATABASE_URL`, token Zalo đã làm mới được lưu trong PostgreSQL; nếu chạy tại máy riêng không có cơ sở dữ liệu, token nằm tại `data/zalo-tokens.json`.
 
-## Lưu trữ và triển khai
+## Triển khai trên Vercel
 
-Dữ liệu được lưu tại `data/family.json` sau lần chỉnh sửa đầu tiên; ảnh và tài liệu tải lên nằm trong `public/uploads`. Sao lưu hai vị trí này định kỳ. Ứng dụng cần máy chủ có ổ đĩa ghi được và lưu bền; môi trường serverless với hệ thống tệp tạm thời sẽ mất thay đổi. Lớp lưu trữ JSON hiện phù hợp cho một tiến trình máy chủ. Nếu có nhiều máy chủ hoặc nhiều người biên tập đồng thời, chuyển sang cơ sở dữ liệu và kho tệp dùng chung trước khi triển khai.
+1. Import kho GitHub vào Vercel dưới dạng dự án Next.js.
+2. Trong **Storage**, tạo và kết nối một PostgreSQL từ Marketplace (ví dụ Neon). Đặt `DATABASE_URL` là chuỗi kết nối PostgreSQL trong môi trường **Production**. Ứng dụng tự tạo bảng `app_state` trong lần đọc đầu; tài khoản DB cần quyền tạo bảng. Các lần sửa gia phả dùng giao dịch và khóa dòng để tránh ghi đè khi hai yêu cầu đến cùng lúc.
+3. Trong **Storage**, tạo **Vercel Blob riêng tư** và kết nối dự án. Kiểm tra biến `BLOB_READ_WRITE_TOKEN` có trong Production. Ảnh và tài liệu được lưu trong Blob, truy cập qua `/api/files/...`. Giới hạn tệp 4 MB vì Vercel Function giới hạn kích thước yêu cầu.
+4. Đặt `ADMIN_USERNAME`, `ADMIN_PASSWORD` và `CRON_SECRET` trong **Settings → Environment Variables** (Production). Chọn mật khẩu quản trị mạnh và bí mật cron riêng. Triển khai lại sau khi thêm biến môi trường.
+5. Kiểm tra cây gia phả, đăng nhập, thêm thử một thành viên và tải thử một ảnh. Dữ liệu đã sửa phải còn sau khi triển khai lại. Bật kiểm tra lịch nhắc Zalo khi có OA/ZBS và mẫu tin được duyệt; hiện tại lịch Cron chạy nhưng không gửi tin thật.
+
+Vercel không dùng `data/family.json`, `data/zalo-tokens.json` hay `public/uploads` để lưu dữ liệu lâu dài. Khi thiếu `DATABASE_URL`, API sẽ báo lỗi thay vì ghi vào ổ đĩa tạm. Khi thiếu `BLOB_READ_WRITE_TOKEN`, chức năng tải tệp sẽ báo thiếu cấu hình. Dữ liệu mẫu xuất hiện cho tới lần chỉnh sửa đầu tiên; cần thay bằng dữ liệu gia đình đã xác nhận. Sao lưu PostgreSQL và Blob theo nhu cầu. PWA cần HTTPS, Vercel cung cấp HTTPS cho tên miền triển khai.
+
+Khi chạy trên máy riêng và không đặt `DATABASE_URL`/`BLOB_READ_WRITE_TOKEN`, ứng dụng vẫn dùng `data/family.json`, `data/zalo-tokens.json` và `public/uploads` như trước. Nếu muốn thử đúng cấu hình Production ở máy, đặt hai biến này trong `.env.local`.
 
 Kiểm tra bằng `npm test`, `npm run typecheck` và `npm run build`.

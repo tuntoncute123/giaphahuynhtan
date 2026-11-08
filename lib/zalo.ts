@@ -3,6 +3,7 @@ import path from 'node:path';
 import { createHash } from 'node:crypto';
 import type { MemorialEvent } from './lunar';
 import type { Member, ReminderSubscription } from './types';
+import { database, ensureDatabase, useDatabase } from './database';
 
 type TokenFile = { accessToken: string; refreshToken: string; expiresAt: number };
 type TemplateField = 'recipient' | 'event' | 'lunarDate' | 'solarDate' | 'location' | 'daysBefore';
@@ -21,10 +22,21 @@ export function zaloConfigStatus() {
   return { ready: missing.length === 0, missing };
 }
 async function readTokens(): Promise<TokenFile | null> {
+  if (useDatabase()) {
+    await ensureDatabase();
+    const rows = await database()`SELECT data FROM app_state WHERE key = 'zalo_tokens'`;
+    return rows.length ? rows[0].data as TokenFile : null;
+  }
   try { return JSON.parse(await readFile(tokenPath, 'utf8')) as TokenFile; }
   catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null; throw error; }
 }
 async function writeTokens(tokens: TokenFile) {
+  if (useDatabase()) {
+    await ensureDatabase();
+    await database()`INSERT INTO app_state (key, data) VALUES ('zalo_tokens', ${JSON.stringify(tokens)}::jsonb)
+      ON CONFLICT (key) DO UPDATE SET data = EXCLUDED.data`;
+    return;
+  }
   await mkdir(path.dirname(tokenPath), { recursive: true });
   const temporary = `${tokenPath}.${crypto.randomUUID()}.tmp`;
   await writeFile(temporary, JSON.stringify(tokens), { encoding: 'utf8', mode: 0o600 });

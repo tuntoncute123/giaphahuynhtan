@@ -7,7 +7,10 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 class InputError extends Error { constructor(message: string, public status = 400) { super(message); } }
 const fail = (error: unknown) => NextResponse.json({ error: error instanceof Error ? error.message : 'Không thể xử lý yêu cầu.' }, { status: error instanceof InputError ? error.status : 500 });
-export async function GET(request: Request) { return NextResponse.json(publicFamily(await readFamily(), isAdmin(request))); }
+export async function GET(request: Request) {
+  try { return NextResponse.json(publicFamily(await readFamily(), isAdmin(request))); }
+  catch (error) { return fail(error); }
+}
 export async function POST(request: Request) {
   if (!isAdmin(request)) return NextResponse.json({ error: 'Vui lòng đăng nhập quản trị.' }, { status: 401 });
   try {
