@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowRight, BellRing, BookOpen, CalendarDays, ChevronDown, ChevronRight, Download, Edit3, Heart, Landmark, Leaf, MapPin, Menu, Minus, Move, Plus, Search, ShieldCheck, Sprout, Trash2, TreePine, UserRound, Users, X } from 'lucide-react';
+import { ArrowRight, BellRing, BookOpen, CalendarDays, ChevronDown, ChevronRight, ChevronUp, Download, Edit3, Heart, Landmark, Leaf, ListTree, MapPin, Menu, Minus, Move, Network, Plus, Search, ShieldCheck, Sprout, Trash2, TreePine, UserRound, Users, X } from 'lucide-react';
 import type { ContentRecord, FamilyData, Member } from '@/lib/types';
 import { byName, bySeniority, childrenOf, descendantsOf, displayYear, fullDate, generationOf, matchesMember } from '@/lib/family';
 import { addressFor } from '@/lib/kinship';
@@ -305,6 +305,110 @@ function MemberSearchSelect({
   );
 }
 
+const ORDINAL_NAMES: Record<number, string> = {
+  1: 'Hai', 2: 'Ba', 3: 'Tư', 4: 'Năm', 5: 'Sáu',
+  6: 'Bảy', 7: 'Tám', 8: 'Chín', 9: 'Mười', 10: 'Mười Một'
+};
+
+function VerticalTreeNode({
+  person,
+  members,
+  openPerson,
+  expandedIds,
+  toggleExpand,
+  visited,
+  maxGen,
+}: {
+  person: Member;
+  members: Member[];
+  openPerson: (id: string) => void;
+  expandedIds: Set<string>;
+  toggleExpand: (id: string) => void;
+  visited: Set<string>;
+  maxGen: number;
+}): React.ReactNode {
+  if (visited.has(person.id) || generationOf(person.id, members) > maxGen) return null;
+  const next = new Set(visited).add(person.id);
+  const spouse = person.spouseIds.map(id => members.find(m => m.id === id)).filter((x): x is Member => !!x);
+  spouse.forEach(s => next.add(s.id));
+  const children = childrenOf(person.id, members);
+  const uniqueChildren = children.filter((m, i) => children.findIndex(c => c.id === m.id) === i);
+  const isExpanded = expandedIds.has(person.id);
+  const canExpand = uniqueChildren.length > 0 && generationOf(person.id, members) < maxGen;
+  const gen = generationOf(person.id, members);
+  const ordinalLabel = person.birthOrder && ORDINAL_NAMES[person.birthOrder] ? `Thứ ${ORDINAL_NAMES[person.birthOrder]}` : person.birthOrder ? `Thứ ${person.birthOrder}` : null;
+
+  return (
+    <div className="vtree-node" key={person.id}>
+      <div className="vtree-card-row">
+        <button
+          type="button"
+          className="vtree-card"
+          onClick={() => openPerson(person.id)}
+        >
+          <Avatar person={person} size="small" />
+          <div className="vtree-info">
+            <div className="vtree-name-line">
+              <strong className="vtree-name">{person.fullName}</strong>
+              <span className="vtree-gen-badge">Đời {gen}</span>
+              {ordinalLabel && <span className="vtree-order-badge">{ordinalLabel}</span>}
+            </div>
+            <div className="vtree-meta">
+              <span>{displayYear(person.birthDate)} {person.deathDate ? `– ${displayYear(person.deathDate)}` : '– nay'}</span>
+              {spouse.length > 0 && (
+                <span className="vtree-spouse">
+                  <Heart size={10} fill="currentColor" /> {spouse.map(s => s.fullName).join(', ')}
+                </span>
+              )}
+            </div>
+          </div>
+        </button>
+
+        {canExpand && (
+          <button
+            type="button"
+            className={`vtree-toggle-btn ${isExpanded ? 'expanded' : ''}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleExpand(person.id);
+            }}
+            title={isExpanded ? 'Thu gọn nhánh con' : `Mở rộng ${uniqueChildren.length} người con`}
+          >
+            {isExpanded ? (
+              <>
+                <ChevronUp size={15} />
+                <span>Thu gọn</span>
+              </>
+            ) : (
+              <>
+                <ChevronDown size={15} />
+                <span>{uniqueChildren.length} con</span>
+              </>
+            )}
+          </button>
+        )}
+      </div>
+
+      {canExpand && isExpanded && (
+        <div className="vtree-children-list">
+          {uniqueChildren.map(child => (
+            <VerticalTreeNode
+              key={child.id}
+              person={child}
+              members={members}
+              openPerson={openPerson}
+              expandedIds={expandedIds}
+              toggleExpand={toggleExpand}
+              visited={next}
+              maxGen={maxGen}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function TreeView({
   members,
   openPerson,
@@ -325,6 +429,16 @@ function TreeView({
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [fromId, setFromId] = useState('');
   const [toId, setToId] = useState('');
+
+  const [viewMode, setViewMode] = useState<'canvas' | 'list'>('canvas');
+  const [finderOpenMobile, setFinderOpenMobile] = useState(false);
+
+  useEffect(() => {
+    // Tự động chuyển sang phả đồ dọc trên màn hình điện thoại
+    if (typeof window !== 'undefined' && window.innerWidth <= 768) {
+      setViewMode('list');
+    }
+  }, []);
 
   const filterContainerRef = useRef<HTMLDivElement>(null);
   const filterInputRef = useRef<HTMLInputElement>(null);
@@ -418,6 +532,60 @@ function TreeView({
   const totalGen = members.length ? Math.max(...members.map(m => generationOf(m.id, members))) : 1;
   const address = fromId && toId ? addressFor(fromId, toId, members) : null;
 
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
+
+  // Tự động mở rộng 2 đời đầu khi khởi tạo
+  useEffect(() => {
+    if (members.length > 0) {
+      setExpandedIds(prev => {
+        if (prev.size > 0) return prev;
+        const initial = new Set<string>();
+        roots.forEach(r => {
+          initial.add(r.id);
+          childrenOf(r.id, members).forEach(c => initial.add(c.id));
+        });
+        return initial;
+      });
+    }
+  }, [members, roots]);
+
+  const toggleExpand = (id: string) => {
+    setExpandedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const expandAll = () => {
+    const allWithChildren = members.filter(m => childrenOf(m.id, members).length > 0).map(m => m.id);
+    setExpandedIds(new Set(allWithChildren));
+  };
+
+  const collapseToRoot = () => {
+    setExpandedIds(new Set(roots.map(r => r.id)));
+  };
+
+  useEffect(() => {
+    if (focusTreeId) {
+      const desc = descendantsOf(focusTreeId, members).map(m => m.id);
+      setExpandedIds(prev => new Set([...prev, focusTreeId, ...desc]));
+    }
+  }, [focusTreeId, members]);
+
+  const scrollToRoot = () => {
+    setZoom(1);
+    if (scrollRef.current) {
+      const el = scrollRef.current;
+      el.scrollTo({
+        left: (el.scrollWidth - el.clientWidth) / 2,
+        top: 0,
+        behavior: 'smooth'
+      });
+    }
+  };
+
   const renderNode = (person: Member, visited: Set<string>): React.ReactNode => {
     if (visited.has(person.id) || generationOf(person.id, members) > maxGen) return null;
     const next = new Set(visited).add(person.id);
@@ -478,44 +646,67 @@ function TreeView({
       </div>
 
       <div className="relationship-finder">
-        <div className="relationship-heading">
+        <div className="relationship-heading" onClick={() => setFinderOpenMobile(o => !o)}>
           <Heart size={20} />
           <div>
             <strong>Nên gọi bằng vai vế gì?</strong>
             <span>Gõ tìm kiếm bản thân và người muốn xưng hô để tra cứu cách gọi chính xác theo dòng họ.</span>
           </div>
+          <button type="button" className="mobile-finder-toggle-btn" aria-label="Đóng/Mở tra cứu vai vế">
+            {finderOpenMobile ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+          </button>
         </div>
-        <div className="relationship-fields">
-          <MemberSearchSelect
-            label="Tôi là:"
-            placeholder="Gõ tìm tên bạn..."
-            selectedId={fromId}
-            onSelect={setFromId}
-            members={members}
-          />
-          <ArrowRight size={20} className="relationship-arrow" />
-          <MemberSearchSelect
-            label="Tôi muốn gọi:"
-            placeholder="Gõ tìm người muốn xưng hô..."
-            selectedId={toId}
-            onSelect={setToId}
-            members={members}
-          />
-        </div>
-        {address && (
-          <div className="relationship-result">
-            <div className="relationship-term-box">
-              <span>Nên gọi là:</span>
-              <strong className="term-highlight">{address.term}</strong>
-              {address.reciprocal && (
-                <span className="reciprocal-tag">
-                  (Xưng hô lại: <em>{address.reciprocal}</em>)
-                </span>
-              )}
-            </div>
-            <small className="explanation-text">{address.explanation}</small>
+        <div className={`relationship-body ${finderOpenMobile || address ? 'mobile-open' : ''}`}>
+          <div className="relationship-fields">
+            <MemberSearchSelect
+              label="Tôi là:"
+              placeholder="Gõ tìm tên bạn..."
+              selectedId={fromId}
+              onSelect={setFromId}
+              members={members}
+            />
+            <ArrowRight size={20} className="relationship-arrow" />
+            <MemberSearchSelect
+              label="Tôi muốn gọi:"
+              placeholder="Gõ tìm người muốn xưng hô..."
+              selectedId={toId}
+              onSelect={setToId}
+              members={members}
+            />
           </div>
-        )}
+          {address && (
+            <div className="relationship-result">
+              <div className="relationship-term-box">
+                <span>Nên gọi là:</span>
+                <strong className="term-highlight">{address.term}</strong>
+                {address.reciprocal && (
+                  <span className="reciprocal-tag">
+                    (Xưng hô lại: <em>{address.reciprocal}</em>)
+                  </span>
+                )}
+              </div>
+              <small className="explanation-text">{address.explanation}</small>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Tab chuyển đổi chế độ xem: chỉ hiển thị trên điện thoại */}
+      <div className="mobile-view-tabs">
+        <button
+          type="button"
+          className={`view-tab-btn ${viewMode === 'list' ? 'active' : ''}`}
+          onClick={() => setViewMode('list')}
+        >
+          <ListTree size={16} /> Phả đồ dọc (Dễ đọc)
+        </button>
+        <button
+          type="button"
+          className={`view-tab-btn ${viewMode === 'canvas' ? 'active' : ''}`}
+          onClick={() => setViewMode('canvas')}
+        >
+          <Network size={16} /> Sơ đồ ngang
+        </button>
       </div>
 
       <div className="tree-panel">
@@ -613,13 +804,15 @@ function TreeView({
             </label>
           </div>
 
-          <div className="zoom-controls">
-            <button aria-label="Thu nhỏ" title="Thu nhỏ (tối thiểu 10%)" onClick={zoomOut}><Minus size={17} /></button>
-            <span title="Tỉ lệ hiện tại">{Math.round(zoom * 100)}%</span>
-            <button aria-label="Phóng to" title="Phóng to (tối đa 200%)" onClick={zoomIn}><Plus size={17} /></button>
-            <button title="Thu nhỏ toàn cảnh (20%)" onClick={zoomOverview}>20%</button>
-            <button title="Đặt lại kích thước chuẩn (100%)" onClick={zoomReset}>100%</button>
-          </div>
+          {viewMode === 'canvas' && (
+            <div className="zoom-controls">
+              <button aria-label="Thu nhỏ" title="Thu nhỏ (tối thiểu 10%)" onClick={zoomOut}><Minus size={17} /></button>
+              <span title="Tỉ lệ hiện tại">{Math.round(zoom * 100)}%</span>
+              <button aria-label="Phóng to" title="Phóng to (tối đa 200%)" onClick={zoomIn}><Plus size={17} /></button>
+              <button title="Thu nhỏ toàn cảnh (20%)" onClick={zoomOverview}>20%</button>
+              <button title="Đặt lại kích thước chuẩn (100%)" onClick={zoomReset}>100%</button>
+            </div>
+          )}
         </div>
 
         {focusPerson && (
@@ -645,25 +838,70 @@ function TreeView({
           </div>
         )}
 
-        <div
-          className={`tree-scroll ${isPanning ? 'is-panning' : ''}`}
-          ref={scrollRef}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
-          onWheel={handleWheel}
-        >
-          <div
-            className="tree-canvas"
-            style={{
-              transform: `scale(${zoom})`,
-              transformOrigin: 'top center'
-            }}
-          >
-            {shown.length ? shown.map(root => renderNode(root, new Set())) : <div className="empty-state">Chưa có dữ liệu gia phả.</div>}
+        {viewMode === 'list' ? (
+          <div className="vtree-container">
+            <div className="vtree-toolbar">
+              <span className="vtree-count-text">
+                Hiển thị <strong>{shown.length}</strong> nhánh chính · <strong>{members.length}</strong> thành viên
+              </span>
+              <div className="vtree-actions">
+                <button type="button" className="vtree-action-btn" onClick={expandAll}>
+                  <Plus size={13} /> Mở tất cả
+                </button>
+                <button type="button" className="vtree-action-btn" onClick={collapseToRoot}>
+                  <Minus size={13} /> Thu gọn về Đời 2
+                </button>
+              </div>
+            </div>
+            <div className="vtree-list">
+              {shown.length ? (
+                shown.map(root => (
+                  <VerticalTreeNode
+                    key={root.id}
+                    person={root}
+                    members={members}
+                    openPerson={openPerson}
+                    expandedIds={expandedIds}
+                    toggleExpand={toggleExpand}
+                    visited={new Set()}
+                    maxGen={maxGen}
+                  />
+                ))
+              ) : (
+                <div className="empty-state">Chưa có dữ liệu gia phả.</div>
+              )}
+            </div>
           </div>
-        </div>
+        ) : (
+          <div
+            className={`tree-scroll ${isPanning ? 'is-panning' : ''}`}
+            ref={scrollRef}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+            onWheel={handleWheel}
+          >
+            <div
+              className="tree-canvas"
+              style={{
+                transform: `scale(${zoom})`,
+                transformOrigin: 'top center'
+              }}
+            >
+              {shown.length ? shown.map(root => renderNode(root, new Set())) : <div className="empty-state">Chưa có dữ liệu gia phả.</div>}
+            </div>
+
+            <button
+              type="button"
+              className="scroll-to-root-btn"
+              title="Cuộn về Cụ Tổ Đời 1"
+              onClick={scrollToRoot}
+            >
+              <Sprout size={15} /> Về Cụ Tổ
+            </button>
+          </div>
+        )}
 
         <div className="tree-legend">
           <span><i className="legend-dot" /> Thành viên dòng họ</span>
