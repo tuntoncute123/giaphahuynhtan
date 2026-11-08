@@ -397,7 +397,8 @@ function TreeView({
     if (visited.has(person.id) || generationOf(person.id, members) > maxGen) return null;
     const next = new Set(visited).add(person.id);
     const spouse = person.spouseIds.map(id => members.find(m => m.id === id)).filter((x): x is Member => !!x);
-    const children = members.filter(m => m.fatherId === person.id || (!m.fatherId && m.motherId === person.id) || spouse.some(s => !m.fatherId && m.motherId === s.id)).sort(bySeniority);
+    spouse.forEach(s => next.add(s.id));
+    const children = childrenOf(person.id, members);
     const uniqueChildren = children.filter((m, i) => children.findIndex(c => c.id === m.id) === i);
 
     return (

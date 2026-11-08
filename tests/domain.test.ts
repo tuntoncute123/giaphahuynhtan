@@ -3,7 +3,7 @@ import test from 'node:test';
 import { getLunarDate } from '@dqcai/vn-lunar';
 import type { Member } from '../lib/types';
 import { addressFor } from '../lib/kinship';
-import { bySeniority, childrenOf, matchesMember } from '../lib/family';
+import { bySeniority, childrenOf, descendantsOf, matchesMember } from '../lib/family';
 import { anniversaryFromSolar, nextOccurrence, solarOccurrence } from '../lib/lunar';
 import { directionsUrl } from '../lib/location';
 
@@ -118,4 +118,20 @@ test('cây gia phả sắp xếp anh từ trái qua phải rồi mới đến em
   assert.equal(doanChildren[2].fullName, 'Huỳnh Tấn Sa');     // C.3
   assert.equal(doanChildren[4].fullName, 'Huỳnh Tấn Nhung');  // C.5
   assert.equal(doanChildren[10].fullName, 'Huỳnh Tấn Bổ');   // C.11
+
+  // 5. Kiểm tra mẹ hiển thị đầy đủ con cái và hậu duệ
+  // Bà Nguyễn Thị Phòng (vợ cụ Huỳnh Tấn Tu)
+  const phongChildren = childrenOf('ht-tu-w2', allMembers);
+  assert.equal(phongChildren.length, 13);
+  assert.equal(phongChildren[0].fullName, 'Huỳnh Tấn Cự');
+  assert.ok(descendantsOf('ht-tu-w2', allMembers).length > 100);
+
+  // Bà Võ Thị Trung (vợ cụ Huỳnh Tấn Tu)
+  const trungChildren = childrenOf('ht-tu-w1', allMembers);
+  assert.equal(trungChildren.length, 13);
+
+  // Bà Thái Thị Là (vợ cụ Huỳnh Tấn Hiền)
+  const laChildren = childrenOf('ht-hien-w', allMembers);
+  assert.equal(laChildren.length, 9);
+  assert.ok(descendantsOf('ht-hien-w', allMembers).length > 100);
 });

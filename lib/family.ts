@@ -37,7 +37,27 @@ export function generationOf(id: string, members: Member[], visiting = new Set<s
 }
 
 export function childrenOf(id: string, members: Member[]): Member[] {
-  return members.filter(m => m.fatherId === id || m.motherId === id).sort(bySeniority);
+  const person = members.find(m => m.id === id);
+  if (!person) return [];
+  const spouseIds = person.spouseIds || [];
+
+  return members.filter(m => {
+    // 1. Trực tiếp là cha hoặc mẹ của con
+    if (m.fatherId === id || m.motherId === id) return true;
+
+    // 2. Nếu người này có phối ngẫu (vợ/chồng) và người phối ngẫu là cha/mẹ của con:
+    if (spouseIds.length > 0) {
+      if (m.fatherId && spouseIds.includes(m.fatherId)) {
+        if (!m.motherId || m.motherId === id || spouseIds.includes(m.motherId)) return true;
+        const childMother = members.find(x => x.id === m.motherId);
+        if (childMother && person.spouseIds.some(s => childMother.spouseIds.includes(s))) return true;
+      }
+      if (m.motherId && spouseIds.includes(m.motherId)) {
+        if (!m.fatherId || m.fatherId === id || spouseIds.includes(m.fatherId)) return true;
+      }
+    }
+    return false;
+  }).sort(bySeniority);
 }
 export function siblingsOf(person: Member, members: Member[]): Member[] {
   if (!person.fatherId && !person.motherId) return [];
