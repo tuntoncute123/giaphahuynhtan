@@ -908,12 +908,44 @@ h2{font-family:'Charm',cursive;font-weight:700;line-height:1.34;letter-spacing:-
     width: 38px;
     height: 38px;
   }
+}
+
+@media(min-width: 851px) {
   .quick-grid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px 0;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+@media(max-width: 850px) {
+  .quick-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-auto-rows: 1fr;
+    gap: 1px;
+    padding: 0;
+    background: #dfc897;
+  }
+  .quick-links {
+    padding: 14px 0;
+  }
+  .quick-item {
+    min-width: 0;
+    min-height: 118px;
+    justify-content: center;
+    padding: 12px 8px;
+    border: 0;
+    background: #f5e7c4;
+  }
+  .quick-item:nth-child(5) {
+    grid-column: auto;
   }
   .quick-item:after {
     display: none !important;
+  }
+}
+
+@media(max-width: 440px) {
+  .quick-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
