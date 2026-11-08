@@ -960,7 +960,7 @@ function TreeView({
               <button title="Thu nhỏ toàn cảnh (20%)" onClick={zoomOverview}>20%</button>
               <button title="Đặt lại kích thước chuẩn (100%)" onClick={zoomReset}>100%</button>
               <button title="Cuộn về Cụ Tổ Đời 1" className="zoom-root-btn" onClick={scrollToRoot}>
-                <Sprout size={15} /> Về Cụ Tổ
+                <Sprout size={15} /> <span>Về Cụ Tổ</span>
               </button>
             </div>
           )}
@@ -1049,7 +1049,7 @@ function TreeView({
               title="Cuộn về Cụ Tổ Đời 1"
               onClick={scrollToRoot}
             >
-              <Sprout size={15} /> Về Cụ Tổ
+              <Sprout size={15} /> <span>Về Cụ Tổ</span>
             </button>
           </div>
         )}
