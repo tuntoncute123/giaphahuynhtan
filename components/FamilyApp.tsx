@@ -190,13 +190,17 @@ function MemberSearchSelect({
   );
 
   useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
+    function handleClickOutside(e: Event) {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setIsOpen(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
   }, []);
 
   const filteredMembers = useMemo(() => {
@@ -321,6 +325,23 @@ function TreeView({
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [fromId, setFromId] = useState('');
   const [toId, setToId] = useState('');
+
+  const filterContainerRef = useRef<HTMLDivElement>(null);
+  const filterInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: Event) {
+      if (filterContainerRef.current && !filterContainerRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, []);
 
   // Drag to pan state
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -501,58 +522,70 @@ function TreeView({
         <div className="tree-controls">
           <div className="tree-filters">
             {/* Lọc xem cây từ một người cụ thể đổ xuống */}
-            <div className="tree-name-filter">
-              <label>Lọc từ người:
-                <div className="tree-search-input-wrap">
-                  <Search size={15} />
-                  <input
-                    type="text"
-                    value={filterName}
-                    placeholder="Tìm tên để xem nhánh..."
-                    onChange={e => {
-                      setFilterName(e.target.value);
-                      setDropdownOpen(true);
+            <div className="tree-name-filter" ref={filterContainerRef}>
+              <label htmlFor="tree-filter-input" className="tree-filter-label">Lọc từ người:</label>
+              <div className="tree-search-input-wrap">
+                <Search size={15} />
+                <input
+                  id="tree-filter-input"
+                  ref={filterInputRef}
+                  type="text"
+                  value={filterName}
+                  placeholder="Tìm tên để xem nhánh..."
+                  onChange={e => {
+                    setFilterName(e.target.value);
+                    setDropdownOpen(true);
+                  }}
+                  onFocus={() => setDropdownOpen(true)}
+                  onKeyDown={e => {
+                    if (e.key === 'Escape') {
+                      setDropdownOpen(false);
+                      filterInputRef.current?.blur();
+                    }
+                  }}
+                />
+                {(filterName || focusTreeId) && (
+                  <button
+                    type="button"
+                    className="clear-filter-icon"
+                    title="Xóa bộ lọc"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setFilterName('');
+                      onFocusTreeId(null);
+                      setDropdownOpen(false);
+                      filterInputRef.current?.blur();
                     }}
-                    onFocus={() => setDropdownOpen(true)}
-                  />
-                  {(filterName || focusTreeId) && (
-                    <button
-                      type="button"
-                      className="clear-filter-icon"
-                      title="Xóa bộ lọc"
-                      onClick={() => {
-                        setFilterName('');
-                        onFocusTreeId(null);
-                        setDropdownOpen(false);
-                      }}
-                    >
-                      <X size={14} />
-                    </button>
-                  )}
-                  {dropdownOpen && matchingMembers.length > 0 && (
-                    <div className="tree-filter-dropdown">
-                      {matchingMembers.map(m => (
-                        <button
-                          type="button"
-                          key={m.id}
-                          className="tree-dropdown-item"
-                          onClick={() => {
-                            onFocusTreeId(m.id);
-                            setFilterName(m.fullName);
-                            setDropdownOpen(false);
-                          }}
-                        >
-                          <Avatar person={m} size="small" />
-                          <div>
-                            <strong>{m.fullName}</strong>
-                            <small>Đời thứ {generationOf(m.id, members)} · {childrenOf(m.id, members).length} con trực hệ</small>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </label>
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+                {dropdownOpen && matchingMembers.length > 0 && (
+                  <div className="tree-filter-dropdown">
+                    {matchingMembers.map(m => (
+                      <button
+                        type="button"
+                        key={m.id}
+                        className="tree-dropdown-item"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          onFocusTreeId(m.id);
+                          setFilterName(m.fullName);
+                          setDropdownOpen(false);
+                          filterInputRef.current?.blur();
+                        }}
+                      >
+                        <Avatar person={m} size="small" />
+                        <div>
+                          <strong>{m.fullName}</strong>
+                          <small>Đời thứ {generationOf(m.id, members)} · {childrenOf(m.id, members).length} con trực hệ</small>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             {!focusTreeId && (
@@ -604,6 +637,7 @@ function TreeView({
               onClick={() => {
                 onFocusTreeId(null);
                 setFilterName('');
+                setDropdownOpen(false);
               }}
             >
               <X size={15} /> Xem lại toàn bộ cây
