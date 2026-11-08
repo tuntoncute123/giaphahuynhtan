@@ -56,3 +56,37 @@ h2{font-family:'Charm',cursive;font-weight:700;line-height:1.34;letter-spacing:-
 .pwa-install-steps svg{vertical-align:-3px;color:#a4372a}
 .pwa-copy-link{display:inline-flex;align-items:center;gap:6px;border:0;background:none;color:#9d2922;font-size:12px;font-weight:900;padding:8px 0 0}
 .pwa-install-chip{position:fixed;bottom:max(16px,env(safe-area-inset-bottom));left:14px;display:inline-flex;align-items:center;gap:7px;background:#fff9ea;color:#24523a;border:1px solid #d7bd80;border-radius:25px;padding:10px 14px;box-shadow:0 6px 20px rgba(34,34,20,.16);font-size:12px;font-weight:900}
+
+/* Cây gia phả: Kéo chuột di chuyển & Tùy chọn thu nhỏ đến 10% */
+.tree-scroll{cursor:grab;user-select:none}
+.tree-scroll.is-panning,.tree-scroll.is-panning *{cursor:grabbing!important;user-select:none!important}
+
+/* Cây gia phả: Bộ lọc tìm kiếm theo tên và hiển thị cây từ người đó đổ xuống */
+.tree-name-filter{position:relative}
+.tree-name-filter label{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:800;color:#766c59}
+.tree-search-input-wrap{position:relative;display:inline-flex;align-items:center}
+.tree-search-input-wrap svg:first-child{position:absolute;left:10px;color:#9d8b68;pointer-events:none}
+.tree-search-input-wrap input{background:#fffdf8;border:1px solid #dfd0ae;border-radius:9px;padding:8px 30px 8px 32px;min-width:200px;font-weight:700;font-size:13px;color:#3f4838;outline:none}
+.tree-search-input-wrap input:focus{border-color:#8aa06d;box-shadow:0 0 0 3px rgba(122,153,95,.15)}
+.clear-filter-icon{position:absolute;right:7px;border:0;background:#ede2c9;color:#6d614e;border-radius:50%;width:19px;height:19px;display:grid;place-items:center;padding:0;cursor:pointer}
+.clear-filter-icon:hover{background:#decfae;color:#3f4838}
+.tree-filter-dropdown{position:absolute;top:calc(100% + 6px);left:0;min-width:290px;max-width:380px;background:#fffdf8;border:1px solid #d9ccac;border-radius:12px;box-shadow:0 12px 32px rgba(45,42,25,.18);max-height:320px;overflow-y:auto;z-index:50;padding:6px;display:flex;flex-direction:column;gap:3px}
+.tree-dropdown-item{width:100%;display:flex;align-items:center;gap:10px;padding:8px 10px;border:0;background:none;border-radius:8px;text-align:left;cursor:pointer;transition:background .15s}
+.tree-dropdown-item:hover{background:#f7eed7}
+.tree-dropdown-item div{display:flex;flex-direction:column;line-height:1.25}
+.tree-dropdown-item strong{font-size:13px;color:#2b3d2c}
+.tree-dropdown-item small{font-size:11px;color:#7a705b}
+
+/* Banner hiển thị nhánh đang xem */
+.tree-focus-banner{display:flex;align-items:center;justify-content:space-between;gap:15px;background:#edf5e4;border-bottom:1px solid #d5e5c7;padding:10px 20px;color:#235b37;font-size:13px}
+.tree-focus-banner .focus-info{display:flex;align-items:center;gap:8px}
+.tree-focus-banner .focus-info strong{color:#1a4f2e}
+.clear-focus-btn{display:inline-flex;align-items:center;gap:6px;border:1px solid #9dc48d;background:#fff;color:#245c38;border-radius:20px;padding:5px 14px;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;transition:all .15s}
+.clear-focus-btn:hover{background:#e3efd8;border-color:#8bb679}
+
+/* Vai vế xưng hô: Điểm nhấn và từ xưng hô đáp lại */
+.relationship-term-box{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.term-highlight{font-family:'Baloo 2',sans-serif;font-size:21px;line-height:1;color:#8b1f1a;background:#fff5e5;padding:3px 11px;border-radius:7px;border:1px solid #edd5b2}
+.reciprocal-tag{font-size:12px;color:#4b6b47;font-weight:700;background:#eef6e6;padding:3px 9px;border-radius:6px;border:1px solid #d3e5cb}
+.reciprocal-tag em{font-style:normal;color:#235832;font-weight:800}
+.explanation-text{flex:1 0 100%;font-weight:600;color:#5c6e5b;font-size:12px;line-height:1.5}

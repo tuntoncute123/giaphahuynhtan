@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { ArrowRight, BellRing, BookOpen, CalendarDays, ChevronDown, ChevronRight, Download, Edit3, Heart, Landmark, Leaf, MapPin, Menu, Minus, Plus, Search, ShieldCheck, Sprout, Trash2, TreePine, UserRound, Users, X } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ArrowRight, BellRing, BookOpen, CalendarDays, ChevronDown, ChevronRight, Download, Edit3, Heart, Landmark, Leaf, MapPin, Menu, Minus, Move, Plus, Search, ShieldCheck, Sprout, Trash2, TreePine, UserRound, Users, X } from 'lucide-react';
 import type { ContentRecord, FamilyData, Member } from '@/lib/types';
-import { byName, childrenOf, displayYear, fullDate, generationOf, matchesMember } from '@/lib/family';
+import { byName, childrenOf, descendantsOf, displayYear, fullDate, generationOf, matchesMember } from '@/lib/family';
 import { addressFor } from '@/lib/kinship';
 import ShrinesView from './ShrinesView';
 import MemorialView from './MemorialView';
@@ -38,6 +38,7 @@ export default function FamilyApp() {
   const [authenticated, setAuthenticated] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
   const [contentEditing, setContentEditing] = useState<ContentFormState | null>(null);
+  const [focusTreeId, setFocusTreeId] = useState<string | null>(null);
   const members = data?.members || [];
   const selected = members.find(m => m.id === selectedId) || null;
   const generations = useMemo(() => members.length ? Math.max(...members.map(m => generationOf(m.id, members))) : 0, [members]);
@@ -144,7 +145,7 @@ export default function FamilyApp() {
     <main>
       {loading && <div className="loading container">Đang tải gia phả...</div>}
       {serverError && <div className="error-box container">{serverError}</div>}
-      {!loading && !serverError && view === 'tree' && <TreeView members={members} openPerson={openPerson} addMember={beginAdd} />}
+      {!loading && !serverError && view === 'tree' && <TreeView members={members} openPerson={openPerson} addMember={beginAdd} focusTreeId={focusTreeId} onFocusTreeId={setFocusTreeId} />}
       {!loading && !serverError && view === 'members' && <MembersView members={members} openPerson={openPerson} addMember={beginAdd} exportData={exportData} />}
       {!loading && !serverError && data && view === 'shrines' && <ShrinesView data={data} authenticated={authenticated} onData={setData} onLogin={() => setLoginOpen(true)} onToast={setToast} />}
       {!loading && !serverError && data && view === 'memorial' && <MemorialView data={data} authenticated={authenticated} onData={setData} onLogin={() => setLoginOpen(true)} onToast={setToast} />}
@@ -154,7 +155,7 @@ export default function FamilyApp() {
     </main>
 
     <footer className="footer"><div className="container footer-grid"><div><div className="footer-brand"><span className="brand-seal">Tổ</span><strong>Gia phả Huỳnh Tấn</strong></div><p>Gìn giữ cội nguồn, kết nối hôm nay<br />và trao truyền cho mai sau.</p></div><div><h3>Khám phá</h3><button onClick={() => go('tree')}>Cây gia phả</button><button onClick={() => go('members')}>Thành viên</button><button onClick={() => go('shrines')}>Nhà thờ</button><button onClick={() => go('memorial')}>Ngày giỗ</button></div><div><h3>Kết nối</h3><button onClick={() => go('documents')}>Tư liệu</button><button onClick={() => go('news')}>Tin tức · Sự kiện</button><button onClick={() => go('contact')}>Liên hệ</button></div><div className="footer-mark">福</div></div><div className="container footer-bottom">© {new Date().getFullYear()} Gia phả Huỳnh Tấn · Gìn giữ truyền thống gia đình</div></footer>
-    {selected && <MemberProfile person={selected} members={members} authenticated={authenticated} close={() => setSelectedId(null)} openPerson={openPerson} edit={() => { setSelectedId(null); setEditing({ ...selected }); }} remove={() => remove(selected)} goTree={() => { setSelectedId(null); go('tree'); }} />}
+    {selected && <MemberProfile person={selected} members={members} authenticated={authenticated} close={() => setSelectedId(null)} openPerson={openPerson} edit={() => { setSelectedId(null); setEditing({ ...selected }); }} remove={() => remove(selected)} goTree={() => { const id = selected.id; setSelectedId(null); setFocusTreeId(id); go('tree'); }} />}
     {editing && <MemberEditor initial={editing} members={members} close={() => setEditing(null)} save={save} />}
     {contentEditing && <ContentForm initial={contentEditing} close={() => setContentEditing(null)} save={saveContent} />}
     {loginOpen && <LoginModal close={() => setLoginOpen(false)} success={() => { setAuthenticated(true); setLoginOpen(false); setToast('Đã đăng nhập quản trị.'); }} />}
@@ -162,25 +163,353 @@ export default function FamilyApp() {
   </>;
 }
 
-function TreeView({ members, openPerson, addMember }: { members: Member[]; openPerson: (id: string) => void; addMember: () => void }) {
+function TreeView({
+  members,
+  openPerson,
+  addMember,
+  focusTreeId,
+  onFocusTreeId
+}: {
+  members: Member[];
+  openPerson: (id: string) => void;
+  addMember: () => void;
+  focusTreeId: string | null;
+  onFocusTreeId: (id: string | null) => void;
+}) {
   const [zoom, setZoom] = useState(1);
   const [maxGen, setMaxGen] = useState(99);
   const [rootId, setRootId] = useState('all');
-  const [fromId, setFromId] = useState(''); const [toId, setToId] = useState('');
-  const roots = members.filter(m => !m.fatherId && !m.motherId && !m.spouseIds.some(s => { const spouse = members.find(x => x.id === s); return spouse && (spouse.fatherId || spouse.motherId || spouse.gender === 'Nam' && m.gender !== 'Nam'); })).sort(byName);
+  const [filterName, setFilterName] = useState('');
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [fromId, setFromId] = useState('');
+  const [toId, setToId] = useState('');
+
+  // Drag to pan state
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [isPanning, setIsPanning] = useState(false);
+  const panStartRef = useRef({ x: 0, y: 0, scrollLeft: 0, scrollTop: 0 });
+  const hasDraggedRef = useRef(false);
+
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return; // Only left click
+    const el = scrollRef.current;
+    if (!el) return;
+    setIsPanning(true);
+    hasDraggedRef.current = false;
+    panStartRef.current = {
+      x: e.clientX,
+      y: e.clientY,
+      scrollLeft: el.scrollLeft,
+      scrollTop: el.scrollTop,
+    };
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isPanning || !scrollRef.current) return;
+    const dx = e.clientX - panStartRef.current.x;
+    const dy = e.clientY - panStartRef.current.y;
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+      hasDraggedRef.current = true;
+    }
+    scrollRef.current.scrollLeft = panStartRef.current.scrollLeft - dx;
+    scrollRef.current.scrollTop = panStartRef.current.scrollTop - dy;
+  };
+
+  const handleMouseUp = () => {
+    setIsPanning(false);
+    setTimeout(() => {
+      hasDraggedRef.current = false;
+    }, 60);
+  };
+
+  // Zoom handlers: min 10% (0.1), max 200% (2.0)
+  const zoomIn = () => setZoom(z => Math.min(2.0, +(z < 0.3 ? z + 0.05 : z + 0.1).toFixed(2)));
+  const zoomOut = () => setZoom(z => Math.max(0.1, +(z <= 0.3 ? z - 0.05 : z - 0.1).toFixed(2)));
+  const zoomReset = () => setZoom(1);
+  const zoomOverview = () => setZoom(0.2);
+
+  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault();
+      if (e.deltaY < 0) zoomIn();
+      else zoomOut();
+    }
+  };
+
+  // Autocomplete matching members by name
+  const matchingMembers = useMemo(() => {
+    if (!filterName.trim()) return [];
+    return members.filter(m => matchesMember(m, filterName)).slice(0, 12);
+  }, [filterName, members]);
+
+  const roots = members.filter(m => !m.fatherId && !m.motherId && !m.spouseIds.some(s => {
+    const spouse = members.find(x => x.id === s);
+    return spouse && (spouse.fatherId || spouse.motherId || spouse.gender === 'Nam' && m.gender !== 'Nam');
+  })).sort(byName);
   const options = roots.length ? roots : members.filter(m => !m.fatherId && !m.motherId);
-  const shown = rootId === 'all' ? options : options.filter(m => m.id === rootId);
+
+  // If focusTreeId is active, show only that person and their descendants downwards
+  const focusPerson = focusTreeId ? members.find(m => m.id === focusTreeId) : null;
+  const shown = focusPerson
+    ? [focusPerson]
+    : rootId === 'all'
+    ? options
+    : options.filter(m => m.id === rootId);
+
   const totalGen = members.length ? Math.max(...members.map(m => generationOf(m.id, members))) : 1;
   const address = fromId && toId ? addressFor(fromId, toId, members) : null;
+
   const renderNode = (person: Member, visited: Set<string>): React.ReactNode => {
     if (visited.has(person.id) || generationOf(person.id, members) > maxGen) return null;
     const next = new Set(visited).add(person.id);
     const spouse = person.spouseIds.map(id => members.find(m => m.id === id)).filter((x): x is Member => !!x);
     const children = members.filter(m => m.fatherId === person.id || (!m.fatherId && m.motherId === person.id) || spouse.some(s => !m.fatherId && m.motherId === s.id)).sort(byName);
     const uniqueChildren = children.filter((m, i) => children.findIndex(c => c.id === m.id) === i);
-    return <div className="tree-node" key={person.id}><div className="tree-pair"><button className="tree-card" onClick={() => openPerson(person.id)}><span className="generation-badge">Đời {generationOf(person.id, members)}</span><Avatar person={person} size="small" /><strong>{person.fullName}</strong><span>{displayYear(person.birthDate)} {person.deathDate ? `– ${displayYear(person.deathDate)}` : '– nay'}</span></button>{spouse.map(s => <button className="tree-card spouse-card" key={s.id} onClick={() => openPerson(s.id)}><span className="spouse-heart"><Heart size={12} fill="currentColor" /> Phối ngẫu</span><Avatar person={s} size="small" /><strong>{s.fullName}</strong><span>{displayYear(s.birthDate)} {s.deathDate ? `– ${displayYear(s.deathDate)}` : '– nay'}</span></button>)}</div>{uniqueChildren.length > 0 && generationOf(person.id, members) < maxGen && <div className="tree-children">{uniqueChildren.map(child => renderNode(child, next))}</div>}</div>;
+
+    return (
+      <div className="tree-node" key={person.id}>
+        <div className="tree-pair">
+          <button
+            className="tree-card"
+            onClick={() => {
+              if (!hasDraggedRef.current) openPerson(person.id);
+            }}
+          >
+            <span className="generation-badge">Đời {generationOf(person.id, members)}</span>
+            <Avatar person={person} size="small" />
+            <strong>{person.fullName}</strong>
+            <span>{displayYear(person.birthDate)} {person.deathDate ? `– ${displayYear(person.deathDate)}` : '– nay'}</span>
+          </button>
+          {spouse.map(s => (
+            <button
+              className="tree-card spouse-card"
+              key={s.id}
+              onClick={() => {
+                if (!hasDraggedRef.current) openPerson(s.id);
+              }}
+            >
+              <span className="spouse-heart"><Heart size={12} fill="currentColor" /> Phối ngẫu</span>
+              <Avatar person={s} size="small" />
+              <strong>{s.fullName}</strong>
+              <span>{displayYear(s.birthDate)} {s.deathDate ? `– ${displayYear(s.deathDate)}` : '– nay'}</span>
+            </button>
+          ))}
+        </div>
+        {uniqueChildren.length > 0 && generationOf(person.id, members) < maxGen && (
+          <div className="tree-children">
+            {uniqueChildren.map(child => renderNode(child, next))}
+          </div>
+        )}
+      </div>
+    );
   };
-  return <section className="tree-section container"><div className="section-toolbar"><div><span className="section-kicker">SƠ ĐỒ DÒNG HỌ</span><h2>Cây gia phả Huỳnh Tấn</h2><p>Chọn một thành viên để xem hồ sơ và các mối quan hệ.</p></div><button className="primary-btn" onClick={addMember}><Plus size={17} /> Thêm thành viên</button></div><div className="relationship-finder"><div className="relationship-heading"><Heart size={20} /><div><strong>Nên gọi bằng vai vế gì?</strong><span>Chọn bản thân và người muốn xưng hô.</span></div></div><div className="relationship-fields"><select aria-label="Tôi là" value={fromId} onChange={e => setFromId(e.target.value)}><option value="">Tôi là...</option>{[...members].sort(byName).map(m => <option value={m.id} key={m.id}>{m.fullName}</option>)}</select><ArrowRight size={18} /><select aria-label="Tôi muốn gọi" value={toId} onChange={e => setToId(e.target.value)}><option value="">Tôi muốn gọi...</option>{[...members].sort(byName).map(m => <option value={m.id} key={m.id}>{m.fullName}</option>)}</select></div>{address && <div className="relationship-result"><span>Nên gọi là</span><strong>{address.term}</strong><small>{address.explanation}</small></div>}</div><div className="tree-panel"><div className="tree-controls"><div className="tree-filters"><label>Nhánh gia đình <span className="select-wrap"><select value={rootId} onChange={e => setRootId(e.target.value)}><option value="all">Tất cả nhánh</option>{options.map(m => <option value={m.id} key={m.id}>{m.fullName}</option>)}</select><ChevronDown size={15} /></span></label><label>Hiển thị đến <span className="select-wrap"><select value={maxGen} onChange={e => setMaxGen(Number(e.target.value))}><option value={99}>Tất cả đời</option>{Array.from({ length: totalGen }, (_, i) => i + 1).map(n => <option value={n} key={n}>Đời thứ {n}</option>)}</select><ChevronDown size={15} /></span></label></div><div className="zoom-controls"><button aria-label="Thu nhỏ" onClick={() => setZoom(z => Math.max(0.6, +(z - 0.1).toFixed(1)))}><Minus size={17} /></button><span>{Math.round(zoom * 100)}%</span><button aria-label="Phóng to" onClick={() => setZoom(z => Math.min(1.5, +(z + 0.1).toFixed(1)))}><Plus size={17} /></button><button onClick={() => setZoom(1)}>Đặt lại</button></div></div><div className="tree-scroll"><div className="tree-canvas" style={{ transform: `scale(${zoom})`, transformOrigin: 'top center' }}>{shown.length ? shown.map(root => renderNode(root, new Set())) : <div className="empty-state">Chưa có dữ liệu gia phả.</div>}</div></div><div className="tree-legend"><span><i className="legend-dot" /> Thành viên dòng họ</span><span><Heart size={14} /> Phối ngẫu</span><span>Cuộn ngang để xem thêm các nhánh</span></div></div><div className="tree-hint"><Sprout size={25} /><div><strong>Góp một nhánh, giữ trọn cội nguồn</strong><p>Thêm thông tin cha, mẹ hoặc người phối ngẫu khi tạo hồ sơ để thành viên xuất hiện đúng vị trí trong cây.</p></div><button className="text-link" onClick={addMember}>Bổ sung thành viên <ArrowRight size={17} /></button></div></section>;
+
+  return (
+    <section className="tree-section container">
+      <div className="section-toolbar">
+        <div>
+          <span className="section-kicker">SƠ ĐỒ DÒNG HỌ</span>
+          <h2>Cây gia phả Huỳnh Tấn</h2>
+          <p>Chọn một thành viên để xem hồ sơ hoặc lọc xem một nhánh gia đình từ người đó đổ xuống.</p>
+        </div>
+        <button className="primary-btn" onClick={addMember}>
+          <Plus size={17} /> Thêm thành viên
+        </button>
+      </div>
+
+      <div className="relationship-finder">
+        <div className="relationship-heading">
+          <Heart size={20} />
+          <div>
+            <strong>Nên gọi bằng vai vế gì?</strong>
+            <span>Chọn bản thân và người muốn xưng hô để tra cứu cách gọi chính xác theo dòng họ.</span>
+          </div>
+        </div>
+        <div className="relationship-fields">
+          <select aria-label="Tôi là" value={fromId} onChange={e => setFromId(e.target.value)}>
+            <option value="">Tôi là...</option>
+            {[...members].sort(byName).map(m => (
+              <option value={m.id} key={m.id}>{m.fullName} (Đời {generationOf(m.id, members)})</option>
+            ))}
+          </select>
+          <ArrowRight size={18} />
+          <select aria-label="Tôi muốn gọi" value={toId} onChange={e => setToId(e.target.value)}>
+            <option value="">Tôi muốn gọi...</option>
+            {[...members].sort(byName).map(m => (
+              <option value={m.id} key={m.id}>{m.fullName} (Đời {generationOf(m.id, members)})</option>
+            ))}
+          </select>
+        </div>
+        {address && (
+          <div className="relationship-result">
+            <div className="relationship-term-box">
+              <span>Nên gọi là:</span>
+              <strong className="term-highlight">{address.term}</strong>
+              {address.reciprocal && (
+                <span className="reciprocal-tag">
+                  (Xưng hô lại: <em>{address.reciprocal}</em>)
+                </span>
+              )}
+            </div>
+            <small className="explanation-text">{address.explanation}</small>
+          </div>
+        )}
+      </div>
+
+      <div className="tree-panel">
+        <div className="tree-controls">
+          <div className="tree-filters">
+            {/* Lọc xem cây từ một người cụ thể đổ xuống */}
+            <div className="tree-name-filter">
+              <label>Lọc từ người:
+                <div className="tree-search-input-wrap">
+                  <Search size={15} />
+                  <input
+                    type="text"
+                    value={filterName}
+                    placeholder="Tìm tên để xem nhánh..."
+                    onChange={e => {
+                      setFilterName(e.target.value);
+                      setDropdownOpen(true);
+                    }}
+                    onFocus={() => setDropdownOpen(true)}
+                  />
+                  {(filterName || focusTreeId) && (
+                    <button
+                      type="button"
+                      className="clear-filter-icon"
+                      title="Xóa bộ lọc"
+                      onClick={() => {
+                        setFilterName('');
+                        onFocusTreeId(null);
+                        setDropdownOpen(false);
+                      }}
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                  {dropdownOpen && matchingMembers.length > 0 && (
+                    <div className="tree-filter-dropdown">
+                      {matchingMembers.map(m => (
+                        <button
+                          type="button"
+                          key={m.id}
+                          className="tree-dropdown-item"
+                          onClick={() => {
+                            onFocusTreeId(m.id);
+                            setFilterName(m.fullName);
+                            setDropdownOpen(false);
+                          }}
+                        >
+                          <Avatar person={m} size="small" />
+                          <div>
+                            <strong>{m.fullName}</strong>
+                            <small>Đời thứ {generationOf(m.id, members)} · {childrenOf(m.id, members).length} con trực hệ</small>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </label>
+            </div>
+
+            {!focusTreeId && (
+              <label>Nhánh gia đình
+                <span className="select-wrap">
+                  <select value={rootId} onChange={e => setRootId(e.target.value)}>
+                    <option value="all">Tất cả nhánh</option>
+                    {options.map(m => <option value={m.id} key={m.id}>{m.fullName}</option>)}
+                  </select>
+                  <ChevronDown size={15} />
+                </span>
+              </label>
+            )}
+
+            <label>Hiển thị đến
+              <span className="select-wrap">
+                <select value={maxGen} onChange={e => setMaxGen(Number(e.target.value))}>
+                  <option value={99}>Tất cả đời</option>
+                  {Array.from({ length: totalGen }, (_, i) => i + 1).map(n => (
+                    <option value={n} key={n}>Đời thứ {n}</option>
+                  ))}
+                </select>
+                <ChevronDown size={15} />
+              </span>
+            </label>
+          </div>
+
+          <div className="zoom-controls">
+            <button aria-label="Thu nhỏ" title="Thu nhỏ (tối thiểu 10%)" onClick={zoomOut}><Minus size={17} /></button>
+            <span title="Tỉ lệ hiện tại">{Math.round(zoom * 100)}%</span>
+            <button aria-label="Phóng to" title="Phóng to (tối đa 200%)" onClick={zoomIn}><Plus size={17} /></button>
+            <button title="Thu nhỏ toàn cảnh (20%)" onClick={zoomOverview}>20%</button>
+            <button title="Đặt lại kích thước chuẩn (100%)" onClick={zoomReset}>100%</button>
+          </div>
+        </div>
+
+        {focusPerson && (
+          <div className="tree-focus-banner">
+            <div className="focus-info">
+              <Sprout size={18} />
+              <span>
+                Đang xem cây từ: <strong>{focusPerson.fullName}</strong> (Đời thứ {generationOf(focusPerson.id, members)})
+                {' · '}Có <strong>{descendantsOf(focusPerson.id, members).length}</strong> hậu duệ trực hệ đổ xuống
+              </span>
+            </div>
+            <button
+              type="button"
+              className="clear-focus-btn"
+              onClick={() => {
+                onFocusTreeId(null);
+                setFilterName('');
+              }}
+            >
+              <X size={15} /> Xem lại toàn bộ cây
+            </button>
+          </div>
+        )}
+
+        <div
+          className={`tree-scroll ${isPanning ? 'is-panning' : ''}`}
+          ref={scrollRef}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+          onWheel={handleWheel}
+        >
+          <div
+            className="tree-canvas"
+            style={{
+              transform: `scale(${zoom})`,
+              transformOrigin: 'top center'
+            }}
+          >
+            {shown.length ? shown.map(root => renderNode(root, new Set())) : <div className="empty-state">Chưa có dữ liệu gia phả.</div>}
+          </div>
+        </div>
+
+        <div className="tree-legend">
+          <span><i className="legend-dot" /> Thành viên dòng họ</span>
+          <span><Heart size={14} /> Phối ngẫu</span>
+          <span><Move size={14} /> <strong>Giữ chuột và kéo</strong> để di chuyển trên cây</span>
+          <span>Giữ <strong>Ctrl + cuộn chuột</strong> để thu phóng</span>
+        </div>
+      </div>
+
+      <div className="tree-hint">
+        <Sprout size={25} />
+        <div>
+          <strong>Góp một nhánh, giữ trọn cội nguồn</strong>
+          <p>Thêm thông tin cha, mẹ hoặc người phối ngẫu khi tạo hồ sơ để thành viên xuất hiện đúng vị trí trong cây.</p>
+        </div>
+        <button className="text-link" onClick={addMember}>
+          Bổ sung thành viên <ArrowRight size={17} />
+        </button>
+      </div>
+    </section>
+  );
 }
 
 function MembersView({ members, openPerson, addMember, exportData }: { members: Member[]; openPerson: (id: string) => void; addMember: () => void; exportData: () => void }) {

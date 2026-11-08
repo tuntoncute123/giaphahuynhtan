@@ -1,11 +1,35 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { getLunarDate } from '@dqcai/vn-lunar';
-import { seedData } from '../lib/seed';
+import type { Member } from '../lib/types';
 import { addressFor } from '../lib/kinship';
 import { matchesMember } from '../lib/family';
 import { anniversaryFromSolar, nextOccurrence, solarOccurrence } from '../lib/lunar';
 import { directionsUrl } from '../lib/location';
+
+const baseMember: Member = {
+  id: '',
+  fullName: '',
+  aliases: [],
+  birthOrder: null,
+  gender: 'Nam',
+  birthDate: '',
+  deathDate: '',
+  anniversary: null,
+  birthPlace: 'Quảng Ngãi',
+  currentPlace: '',
+  home: { address: '', latitude: null, longitude: null },
+  homePublic: false,
+  zaloPhone: '',
+  zaloConsent: false,
+  occupation: '',
+  biography: '',
+  fatherId: null,
+  motherId: null,
+  spouseIds: [],
+  avatar: '',
+  createdAt: '2026-01-01T00:00:00.000Z'
+};
 
 test('Google Maps chỉ đường tới tọa độ hoặc địa chỉ đã lưu', () => {
   const coordinates = directionsUrl({ address: 'Địa chỉ cũ', latitude: 15.8801, longitude: 108.338 });
@@ -34,7 +58,17 @@ test('tháng nhuận và tháng thiếu có chính sách rõ ràng', () => {
   assert.equal(getLunarDate(day, month, year).day, 29);
 });
 test('tìm biệt danh không dấu và xưng hô theo nhánh gia đình', () => {
-  const members = seedData.members.map(member => member.id === 'ht-08' ? { ...member, aliases: ['Cô Bảy'], birthOrder: 7 } : member);
+  const members: Member[] = [
+    { ...baseMember, id: 'ht-01', fullName: 'Huỳnh Tấn Công', gender: 'Nam', birthDate: '1918-03-12', deathDate: '1998-08-20', spouseIds: ['ht-02'] },
+    { ...baseMember, id: 'ht-02', fullName: 'Nguyễn Thị An', gender: 'Nữ', birthDate: '1922-06-05', deathDate: '2005-11-01', spouseIds: ['ht-01'] },
+    { ...baseMember, id: 'ht-03', fullName: 'Huỳnh Tấn Phúc', gender: 'Nam', birthDate: '1945-02-16', fatherId: 'ht-01', motherId: 'ht-02', spouseIds: ['ht-05'] },
+    { ...baseMember, id: 'ht-05', fullName: 'Trần Thị Hương', gender: 'Nữ', birthDate: '1947-12-08', spouseIds: ['ht-03'] },
+    { ...baseMember, id: 'ht-07', fullName: 'Huỳnh Tấn Bình', gender: 'Nam', birthDate: '1972-07-17', fatherId: 'ht-03', motherId: 'ht-05', spouseIds: ['ht-09'] },
+    { ...baseMember, id: 'ht-08', fullName: 'Huỳnh Thị Mai', gender: 'Nữ', birthDate: '1975-01-29', fatherId: 'ht-03', motherId: 'ht-05', aliases: ['Cô Bảy'], birthOrder: 7 },
+    { ...baseMember, id: 'ht-09', fullName: 'Phạm Thị Thu', gender: 'Nữ', birthDate: '1974-05-13', spouseIds: ['ht-07'] },
+    { ...baseMember, id: 'ht-10', fullName: 'Huỳnh Tấn Nam', gender: 'Nam', birthDate: '2001-10-03', fatherId: 'ht-07', motherId: 'ht-09' },
+    { ...baseMember, id: 'ht-11', fullName: 'Huỳnh Ngọc Hà', gender: 'Nữ', birthDate: '2004-08-15', fatherId: 'ht-07', motherId: 'ht-09' }
+  ];
   const aunt = members.find(member => member.id === 'ht-08')!;
   assert.equal(matchesMember(aunt, 'co bay'), true);
   assert.equal(matchesMember(aunt, 'Huynh Thi Mai'), true);
