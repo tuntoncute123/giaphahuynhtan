@@ -87,7 +87,6 @@ export default function MemorialView({
   const [selectedMonth, setSelectedMonth] = useState<string>('all');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
-  const [zaloStatus, setZaloStatus] = useState<{ ready: boolean; missing: string[] } | null>(null);
 
   const today = vietnamToday();
 
@@ -116,18 +115,9 @@ export default function MemorialView({
     });
   }, [allEvents, search, selectedMonth]);
 
-  const eligibleRecipients = data.members.filter(member => member.zaloPhone && member.zaloConsent);
-
-  useEffect(() => {
-    if (!authenticated) {
-      setZaloStatus(null);
-      return;
-    }
-    fetch('/api/reminders/run')
-      .then(res => res.json())
-      .then(setZaloStatus)
-      .catch(() => setZaloStatus(null));
-  }, [authenticated]);
+  const eligibleRecipients = useMemo(() => {
+    return [...data.members].sort(byName);
+  }, [data.members]);
 
   // Open "Thêm ngày giỗ mới"
   const handleAddNewMemorial = () => {
@@ -236,7 +226,7 @@ export default function MemorialView({
     }
   };
 
-  // Open Zalo Reminder Modal
+  // Open Reminder Modal
   const openAddReminder = (defaultEventKey = '') => {
     if (!authenticated) {
       onLogin();
@@ -246,7 +236,7 @@ export default function MemorialView({
     setError('');
   };
 
-  // Save Zalo Reminder
+  // Save Reminder
   const saveReminder = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!editingReminder) return;
@@ -259,12 +249,12 @@ export default function MemorialView({
         body: JSON.stringify(editingReminder)
       });
       const result = await res.json();
-      if (!res.ok) throw new Error(result.error || 'Không lưu được lịch nhắc.');
+      if (!res.ok) throw new Error(result.error || 'Không lưu được cài đặt thông báo.');
       onData(result);
       setEditingReminder(null);
-      onToast('Đã tạo lịch nhắc giỗ qua Zalo.');
+      onToast('Đã cài đặt thông báo ngày giỗ.');
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'Không lưu được lịch nhắc.');
+      setError(reason instanceof Error ? reason.message : 'Không lưu được cài đặt thông báo.');
     } finally {
       setBusy(false);
     }
@@ -278,15 +268,15 @@ export default function MemorialView({
     });
     const result = await res.json();
     if (!res.ok) {
-      onToast(result.error || 'Không cập nhật được lịch nhắc.');
+      onToast(result.error || 'Không cập nhật được trạng thái thông báo.');
       return;
     }
     onData(result);
-    onToast(item.enabled ? 'Đã tạm dừng lịch nhắc.' : 'Đã bật lịch nhắc.');
+    onToast(item.enabled ? 'Đã tạm dừng thông báo.' : 'Đã bật thông báo ngày giỗ.');
   };
 
   const removeReminder = async (item: ReminderSubscription) => {
-    if (!window.confirm('Xóa lịch nhắc này?')) return;
+    if (!window.confirm('Xóa cài đặt thông báo này?')) return;
     const res = await fetch('/api/reminders', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
@@ -294,11 +284,11 @@ export default function MemorialView({
     });
     const result = await res.json();
     if (!res.ok) {
-      onToast(result.error || 'Không xóa được lịch nhắc.');
+      onToast(result.error || 'Không xóa được thông báo.');
       return;
     }
     onData(result);
-    onToast('Đã xóa lịch nhắc.');
+    onToast('Đã xóa cài đặt thông báo ngày giỗ.');
   };
 
   // Candidates for memorial edit
@@ -328,7 +318,7 @@ export default function MemorialView({
             <Plus size={17} /> Thêm ngày giỗ mới
           </button>
           <button className="outline-btn" onClick={() => openAddReminder()}>
-            <Bell size={16} /> Đặt lịch nhắc Zalo
+            <Bell size={16} /> Cài đặt thông báo ngày giỗ
           </button>
         </div>
       </div>
@@ -485,9 +475,9 @@ export default function MemorialView({
                     type="button"
                     className="card-action-btn bell"
                     onClick={() => openAddReminder(event.key)}
-                    title="Nhận thông báo nhắc giỗ qua Zalo"
+                    title="Cài đặt nhận thông báo ngày giỗ"
                   >
-                    <Bell size={14} /> <span>Nhắc Zalo</span>
+                    <Bell size={14} /> <span>Nhận thông báo</span>
                   </button>
                 </div>
               </article>
@@ -513,25 +503,23 @@ export default function MemorialView({
       <div className="reminder-panel">
         <div className="section-toolbar">
           <div>
-            <span className="section-kicker">NHẮC GIỖ CÁ NHÂN</span>
-            <h2>Người nhận thông báo nhắc giỗ</h2>
-            <p>Mỗi thành viên có thể đăng ký nhận tin nhắn thông báo trước ngày giỗ qua Zalo.</p>
+            <span className="section-kicker">THÔNG BÁO TỰ ĐỘNG</span>
+            <h2>Người nhận thông báo ngày giỗ</h2>
+            <p>Cài đặt nhận thông báo nhắc nhở trước ngày giỗ qua ứng dụng và thông báo Web Push.</p>
           </div>
           <button className="outline-btn" onClick={() => openAddReminder()}>
-            <Plus size={15} /> Thêm người nhận nhắc
+            <Plus size={15} /> Thêm người nhận thông báo
           </button>
         </div>
 
         {authenticated ? (
           <>
-            <div className={`integration-status ${zaloStatus?.ready ? 'ready' : 'waiting'}`}>
+            <div className="integration-status ready">
               <Bell size={20} />
               <div>
-                <strong>{zaloStatus?.ready ? 'Đã có cấu hình Zalo' : 'Chưa kết nối Zalo OA/ZBS'}</strong>
+                <strong>Hệ thống thông báo ngày giỗ tự động (App & Web Push)</strong>
                 <span>
-                  {zaloStatus?.ready
-                    ? 'Lịch nhắc sẽ được gửi khi máy chủ chạy tác vụ hằng ngày.'
-                    : 'Có thể đặt lịch ngay; tin nhắn sẽ gửi tự động khi kết nối Zalo OA của gia đình.'}
+                  Thông báo tự động sẽ được gửi trước ngày giỗ đến các thành viên đã cài đặt.
                 </span>
               </div>
             </div>
@@ -554,7 +542,7 @@ export default function MemorialView({
                         </span>
                         <small>
                           {next
-                            ? `Lần nhắc tới: ${shiftIso(next, -item.daysBefore).split('-').reverse().join('/')}`
+                            ? `Lần thông báo tới: ${shiftIso(next, -item.daysBefore).split('-').reverse().join('/')}`
                             : 'Chưa có lịch tới'}
                           {log
                             ? ` · Gần nhất: ${log.status === 'sent' ? 'đã gửi' : log.status === 'failed' ? 'gửi lỗi' : 'đang gửi'}`
@@ -569,7 +557,7 @@ export default function MemorialView({
                         <button
                           className="icon-btn"
                           onClick={() => removeReminder(item)}
-                          aria-label="Xóa lịch nhắc"
+                          aria-label="Xóa cài đặt thông báo"
                         >
                           <Trash2 size={17} />
                         </button>
@@ -580,13 +568,13 @@ export default function MemorialView({
               </div>
             ) : (
               <div className="reminder-empty">
-                Chưa có ai đăng ký nhận nhắc giỗ. Thêm số Zalo trong hồ sơ thành viên, rồi bấm “Thêm người nhận nhắc”.
+                Chưa có ai đăng ký nhận thông báo ngày giỗ. Bấm “Thêm người nhận thông báo” để bắt đầu cài đặt.
               </div>
             )}
           </>
         ) : (
           <div className="reminder-empty">
-            Đăng nhập quản trị để cài đặt và theo dõi danh sách người nhận nhắc giỗ Zalo.
+            Đăng nhập quản trị để cài đặt và theo dõi danh sách người nhận thông báo ngày giỗ.
           </div>
         )}
       </div>
@@ -824,21 +812,21 @@ export default function MemorialView({
         </div>
       )}
 
-      {/* Modal: Đặt lịch nhắc Zalo */}
+      {/* Modal: Cài đặt thông báo ngày giỗ */}
       {editingReminder && (
         <div className="modal-backdrop" onMouseDown={() => setEditingReminder(null)}>
           <form
             className="form-modal reminder-form"
             role="dialog"
             aria-modal="true"
-            aria-label="Đặt lịch nhắc giỗ"
+            aria-label="Cài đặt thông báo ngày giỗ"
             onMouseDown={event => event.stopPropagation()}
             onSubmit={saveReminder}
           >
             <div className="form-heading">
-              <span className="section-kicker">NHẮC GIỖ QUA ZALO</span>
-              <h2>Đặt lịch nhắc giỗ</h2>
-              <p>Chọn thành viên nhận tin nhắn và ngày giỗ gia đình muốn theo dõi.</p>
+              <span className="section-kicker">THÔNG BÁO NGÀY GIỖ</span>
+              <h2>Cài đặt thông báo ngày giỗ</h2>
+              <p>Chọn thành viên và ngày giỗ gia đình cần theo dõi để nhận thông báo trước ngày lễ.</p>
               <button
                 className="modal-close"
                 type="button"
@@ -852,16 +840,16 @@ export default function MemorialView({
             <div className="form-content">
               <div className="form-grid">
                 <label className="full">
-                  Người nhận <b>*</b>
+                  Người nhận thông báo <b>*</b>
                   <select
                     required
                     value={editingReminder.recipientId}
                     onChange={event => setEditingReminder({ ...editingReminder, recipientId: event.target.value })}
                   >
-                    <option value="">-- Chọn thành viên nhận nhắc --</option>
+                    <option value="">-- Chọn thành viên nhận thông báo --</option>
                     {eligibleRecipients.map(member => (
                       <option value={member.id} key={member.id}>
-                        {member.fullName} · {member.zaloPhone}
+                        {member.fullName} (Đời {generationOf(member.id, data.members)}){member.zaloPhone ? ` · ${member.zaloPhone}` : ''}
                       </option>
                     ))}
                   </select>
@@ -899,7 +887,7 @@ export default function MemorialView({
 
               {!eligibleRecipients.length && (
                 <p className="field-help">
-                  Chưa có người nhận hợp lệ. Vào hồ sơ thành viên để nhập số điện thoại Zalo và bật đồng ý nhận nhắc giỗ.
+                  Chưa có thành viên nào trong danh sách gia phả.
                 </p>
               )}
               {error && <div className="form-error" role="alert">{error}</div>}
@@ -919,7 +907,7 @@ export default function MemorialView({
                 type="submit"
                 disabled={busy || !eligibleRecipients.length || !allEvents.length}
               >
-                {busy ? 'Đang lưu...' : 'Lưu lịch nhắc'} <ArrowRight size={16} />
+                {busy ? 'Đang lưu...' : 'Lưu cài đặt thông báo'} <ArrowRight size={16} />
               </button>
             </div>
           </form>

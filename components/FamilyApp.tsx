@@ -135,7 +135,7 @@ export default function FamilyApp() {
             { icon: <TreePine />, name: 'GIA PHẢ DÒNG HỌ', text: 'Xem sơ đồ, lịch sử của dòng họ', target: 'tree' as View },
             { icon: <Users />, name: 'THÀNH VIÊN', text: 'Danh sách con cháu trong dòng họ', target: 'members' as View },
             { icon: <Landmark />, name: 'NHÀ THỜ', text: 'Vị trí và ngày giỗ tại từng nơi', target: 'shrines' as View },
-            { icon: <BellRing />, name: 'NGÀY GIỖ', text: 'Lịch âm và nhắc giỗ Zalo', target: 'memorial' as View },
+            { icon: <BellRing />, name: 'NGÀY GIỖ', text: 'Lịch âm và thông báo ngày giỗ', target: 'memorial' as View },
             { icon: <Camera />, name: 'TIN TỨC & ẢNH HỌ', text: 'Hình ảnh giỗ, đi lễ, tiệc dòng họ', target: 'news' as View },
             { icon: <Leaf />, name: 'LIÊN HỆ', text: 'Góp ý, liên hệ với ban quản trị', target: 'contact' as View }
           ].map(x => <button className="quick-item" key={x.name} onClick={() => go(x.target)}><span className="quick-icon">{x.icon}</span><strong>{x.name}</strong><span>{x.text}</span></button>)}

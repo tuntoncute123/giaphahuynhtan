@@ -13,10 +13,9 @@ function normalize(body: Partial<ReminderSubscription>, old?: ReminderSubscripti
 function validate(reminder: ReminderSubscription, data: FamilyData) {
   const recipient = data.members.find(m => m.id === reminder.recipientId);
   if (!recipient) throw new InputError('Chọn người nhận có trong gia phả.');
-  if (!recipient.zaloPhone || !recipient.zaloConsent) throw new InputError('Người nhận cần có số Zalo và đồng ý nhận nhắc giỗ.');
   if (!memorialEvents(data.members, data.shrines).some(event => event.key === reminder.eventKey)) throw new InputError('Ngày giỗ không tồn tại hoặc chưa có ngày âm lịch.');
   if (!Number.isInteger(reminder.daysBefore) || reminder.daysBefore < 0 || reminder.daysBefore > 30) throw new InputError('Số ngày nhắc trước phải từ 0 đến 30.');
-  if (data.reminders.some(r => r.id !== reminder.id && r.recipientId === reminder.recipientId && r.eventKey === reminder.eventKey && r.daysBefore === reminder.daysBefore)) throw new InputError('Người này đã có lịch nhắc trùng ngày.');
+  if (data.reminders.some(r => r.id !== reminder.id && r.recipientId === reminder.recipientId && r.eventKey === reminder.eventKey && r.daysBefore === reminder.daysBefore)) throw new InputError('Người này đã cài thông báo trùng ngày.');
 }
 export async function POST(request: Request) {
   if (!isAdmin(request)) return NextResponse.json({ error: 'Vui lòng đăng nhập quản trị.' }, { status: 401 });

@@ -165,8 +165,7 @@ export function validateMember(person: Member, members: Member[]): string | null
   if (person.aliases.length > 12 || person.aliases.some(alias => alias.length > 80)) return 'Tối đa 12 biệt danh, mỗi biệt danh dài tối đa 80 ký tự.';
   if (person.deathDate && person.birthDate && person.deathDate < person.birthDate) return 'Ngày mất không thể trước ngày sinh.';
   if (locationError(person.home)) return locationError(person.home);
-  if (person.zaloPhone && !/^84[35789]\d{8}$/.test(person.zaloPhone)) return 'Số Zalo cần là số di động Việt Nam hợp lệ.';
-  if (person.zaloConsent && !person.zaloPhone) return 'Cần nhập số Zalo trước khi bật đồng ý nhận nhắc giỗ.';
+  if (person.zaloPhone && !/^84[35789]\d{8}$/.test(person.zaloPhone)) return 'Số điện thoại cần là số di động Việt Nam hợp lệ.';
   const ids = [person.fatherId, person.motherId, ...person.spouseIds].filter(Boolean) as string[];
   if (ids.includes(person.id)) return 'Một thành viên không thể có quan hệ với chính mình.';
   if (person.fatherId && person.fatherId === person.motherId) return 'Cha và mẹ phải là hai người khác nhau.';
