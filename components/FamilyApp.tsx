@@ -163,6 +163,140 @@ export default function FamilyApp() {
   </>;
 }
 
+function MemberSearchSelect({
+  label,
+  placeholder,
+  selectedId,
+  onSelect,
+  members,
+}: {
+  label: string;
+  placeholder: string;
+  selectedId: string;
+  onSelect: (id: string) => void;
+  members: Member[];
+}) {
+  const [query, setQuery] = useState('');
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const selectedMember = useMemo(
+    () => members.find(m => m.id === selectedId),
+    [members, selectedId]
+  );
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const filteredMembers = useMemo(() => {
+    const q = query.trim();
+    if (!q) {
+      return [...members].sort(byName).slice(0, 15);
+    }
+    return members.filter(m => matchesMember(m, q)).slice(0, 15);
+  }, [members, query]);
+
+  return (
+    <div className="member-search-select" ref={containerRef}>
+      <span className="member-search-label">{label}</span>
+      <div className="member-search-box">
+        {selectedMember ? (
+          <div className="selected-member-pill" onClick={() => setIsOpen(true)}>
+            <Avatar person={selectedMember} size="small" />
+            <div className="selected-info">
+              <strong>{selectedMember.fullName}</strong>
+              <small>
+                Đời {generationOf(selectedMember.id, members)}
+                {selectedMember.birthDate ? ` (${displayYear(selectedMember.birthDate)})` : ''}
+              </small>
+            </div>
+            <button
+              type="button"
+              className="clear-select-btn"
+              title="Đổi người khác"
+              onClick={e => {
+                e.stopPropagation();
+                onSelect('');
+                setQuery('');
+                setIsOpen(true);
+              }}
+            >
+              <X size={14} />
+            </button>
+          </div>
+        ) : (
+          <div className="search-input-inner">
+            <Search size={15} className="input-search-icon" />
+            <input
+              type="text"
+              value={query}
+              placeholder={placeholder}
+              onFocus={() => setIsOpen(true)}
+              onChange={e => {
+                setQuery(e.target.value);
+                setIsOpen(true);
+              }}
+            />
+            {query && (
+              <button
+                type="button"
+                className="clear-search-btn"
+                title="Xóa tìm kiếm"
+                onClick={() => {
+                  setQuery('');
+                  onSelect('');
+                }}
+              >
+                <X size={13} />
+              </button>
+            )}
+          </div>
+        )}
+
+        {isOpen && (
+          <div className="member-search-dropdown">
+            {filteredMembers.length > 0 ? (
+              filteredMembers.map(m => (
+                <button
+                  type="button"
+                  key={m.id}
+                  className={`search-dropdown-item ${m.id === selectedId ? 'active' : ''}`}
+                  onClick={() => {
+                    onSelect(m.id);
+                    setIsOpen(false);
+                    setQuery('');
+                  }}
+                >
+                  <Avatar person={m} size="small" />
+                  <div className="item-text">
+                    <strong>{m.fullName}</strong>
+                    <small>
+                      Đời {generationOf(m.id, members)}
+                      {m.aliases?.length ? ` · Biệt danh: ${m.aliases.join(', ')}` : ''}
+                      {m.birthDate ? ` · (${displayYear(m.birthDate)})` : ''}
+                    </small>
+                  </div>
+                </button>
+              ))
+            ) : (
+              <div className="search-dropdown-empty">
+                Không tìm thấy ai có tên &quot;{query}&quot;
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function TreeView({
   members,
   openPerson,
@@ -322,23 +456,25 @@ function TreeView({
           <Heart size={20} />
           <div>
             <strong>Nên gọi bằng vai vế gì?</strong>
-            <span>Chọn bản thân và người muốn xưng hô để tra cứu cách gọi chính xác theo dòng họ.</span>
+            <span>Gõ tìm kiếm bản thân và người muốn xưng hô để tra cứu cách gọi chính xác theo dòng họ.</span>
           </div>
         </div>
         <div className="relationship-fields">
-          <select aria-label="Tôi là" value={fromId} onChange={e => setFromId(e.target.value)}>
-            <option value="">Tôi là...</option>
-            {[...members].sort(byName).map(m => (
-              <option value={m.id} key={m.id}>{m.fullName} (Đời {generationOf(m.id, members)})</option>
-            ))}
-          </select>
-          <ArrowRight size={18} />
-          <select aria-label="Tôi muốn gọi" value={toId} onChange={e => setToId(e.target.value)}>
-            <option value="">Tôi muốn gọi...</option>
-            {[...members].sort(byName).map(m => (
-              <option value={m.id} key={m.id}>{m.fullName} (Đời {generationOf(m.id, members)})</option>
-            ))}
-          </select>
+          <MemberSearchSelect
+            label="Tôi là:"
+            placeholder="Gõ tìm tên bạn..."
+            selectedId={fromId}
+            onSelect={setFromId}
+            members={members}
+          />
+          <ArrowRight size={20} className="relationship-arrow" />
+          <MemberSearchSelect
+            label="Tôi muốn gọi:"
+            placeholder="Gõ tìm người muốn xưng hô..."
+            selectedId={toId}
+            onSelect={setToId}
+            members={members}
+          />
         </div>
         {address && (
           <div className="relationship-result">

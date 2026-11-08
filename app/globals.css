@@ -90,3 +90,32 @@ h2{font-family:'Charm',cursive;font-weight:700;line-height:1.34;letter-spacing:-
 .reciprocal-tag{font-size:12px;color:#4b6b47;font-weight:700;background:#eef6e6;padding:3px 9px;border-radius:6px;border:1px solid #d3e5cb}
 .reciprocal-tag em{font-style:normal;color:#235832;font-weight:800}
 .explanation-text{flex:1 0 100%;font-weight:600;color:#5c6e5b;font-size:12px;line-height:1.5}
+
+/* Vai vế xưng hô: Gõ tìm kiếm thành viên thay vì select */
+.relationship-fields{display:flex;align-items:flex-end;gap:12px;flex:1}
+.relationship-arrow{color:#9e7943;flex-shrink:0;margin-bottom:12px}
+.member-search-select{position:relative;flex:1;min-width:210px;display:flex;flex-direction:column;gap:5px}
+.member-search-label{font-size:12px;font-weight:800;color:#635741}
+.member-search-box{position:relative;width:100%}
+.search-input-inner{position:relative;display:flex;align-items:center;background:#fffdf8;border:1px solid #dfd0ae;border-radius:9px;padding:0 11px;min-height:44px;transition:border-color .2s,box-shadow .2s}
+.search-input-inner:focus-within{border-color:#8aa06d;box-shadow:0 0 0 3px rgba(122,153,95,.15)}
+.input-search-icon{color:#9d8b68;margin-right:8px;flex-shrink:0}
+.search-input-inner input{border:0;background:transparent;outline:none;width:100%;font-weight:700;font-size:13px;color:#384236;padding:9px 0}
+.clear-search-btn{border:0;background:#ede2c9;color:#6d614e;border-radius:50%;width:18px;height:18px;display:grid;place-items:center;padding:0;cursor:pointer;flex-shrink:0;margin-left:6px}
+.clear-search-btn:hover{background:#decfae;color:#2e382c}
+.selected-member-pill{display:flex;align-items:center;gap:10px;background:#fffdf8;border:1px solid #c8b78f;border-radius:9px;padding:5px 10px;min-height:44px;cursor:pointer;transition:all .15s}
+.selected-member-pill:hover{border-color:#8aa06d;background:#fdfaf2}
+.selected-info{flex:1;display:flex;flex-direction:column;line-height:1.2}
+.selected-info strong{font-size:13px;color:#1a4f2e}
+.selected-info small{font-size:11px;color:#7a705b}
+.clear-select-btn{border:0;background:#f0e4cc;color:#7a6e59;border-radius:50%;width:22px;height:22px;display:grid;place-items:center;cursor:pointer;padding:0;flex-shrink:0}
+.clear-select-btn:hover{background:#e3d2b0;color:#3a2e1d}
+.member-search-dropdown{position:absolute;top:calc(100% + 5px);left:0;right:0;background:#fffdf8;border:1px solid #d9ccac;border-radius:12px;box-shadow:0 12px 32px rgba(45,42,25,.2);max-height:280px;overflow-y:auto;z-index:60;padding:6px;display:flex;flex-direction:column;gap:2px}
+.search-dropdown-item{width:100%;display:flex;align-items:center;gap:10px;padding:8px 10px;border:0;background:none;border-radius:8px;text-align:left;cursor:pointer;transition:background .15s}
+.search-dropdown-item:hover{background:#f7eed7}
+.search-dropdown-item.active{background:#edf5e4;border-left:3px solid #3c7647}
+.item-text{flex:1;display:flex;flex-direction:column;line-height:1.25}
+.item-text strong{font-size:13px;color:#2b3d2c}
+.item-text small{font-size:11px;color:#7a705b}
+.search-dropdown-empty{padding:14px;text-align:center;font-size:12px;color:#8c826e}
+@media(max-width:620px){.relationship-fields{flex-direction:column;align-items:stretch}.relationship-arrow{align-self:center;margin:2px 0;transform:rotate(90deg)}}
