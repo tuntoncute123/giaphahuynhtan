@@ -134,4 +134,12 @@ test('cây gia phả sắp xếp anh từ trái qua phải rồi mới đến em
   const laChildren = childrenOf('ht-hien-w', allMembers);
   assert.equal(laChildren.length, 9);
   assert.ok(descendantsOf('ht-hien-w', allMembers).length > 100);
+
+  // 6. Kiểm tra cách gọi vai vế anh đầu là Anh Hai, anh thứ 2 là Anh Ba, anh thứ 3 là Anh Tư
+  // Cụ Tu gọi cụ Trường (con đầu lòng, birthOrder 1): Anh Hai
+  assert.equal(addressFor('ht-tu', 'ht-truong', allMembers).term, 'Anh Hai');
+  // Cụ Tu gọi cụ Thọ (con thứ 2, birthOrder 2): Anh Ba
+  assert.equal(addressFor('ht-tu', 'ht-tho', allMembers).term, 'Anh Ba');
+  // Cụ Liên gọi cụ Tu (con thứ 3, birthOrder 3): Anh Tư
+  assert.equal(addressFor('ht-lien', 'ht-tu', allMembers).term, 'Anh Tư');
 });

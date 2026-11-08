@@ -8,9 +8,24 @@ export type AddressResult = {
   exact: boolean;
 };
 
+// Theo phong tục địa phương (Quảng Ngãi, Nam Bộ, Miền Trung):
+// Con đầu / anh (chị) đầu gọi là "Hai", con thứ hai gọi là "Ba", con thứ ba gọi là "Tư"...
 const ordinal: Record<number, string> = {
-  1: 'Cả', 2: 'Hai', 3: 'Ba', 4: 'Tư', 5: 'Năm',
-  6: 'Sáu', 7: 'Bảy', 8: 'Tám', 9: 'Chín', 10: 'Mười'
+  1: 'Hai',
+  2: 'Ba',
+  3: 'Tư',
+  4: 'Năm',
+  5: 'Sáu',
+  6: 'Bảy',
+  7: 'Tám',
+  8: 'Chín',
+  9: 'Mười',
+  10: 'Mười Một',
+  11: 'Mười Hai',
+  12: 'Mười Ba',
+  13: 'Mười Bốn',
+  14: 'Mười Lăm',
+  15: 'Mười Sáu'
 };
 
 const result = (term: string, explanation: string, reciprocal = '', exact = true): AddressResult => ({
@@ -87,7 +102,8 @@ function withNickname(base: AddressResult, target: Member): AddressResult {
     return { ...base, term: preferred, explanation: `${base.explanation} Tên thường gọi: ${preferred}.` };
   }
   if (target.birthOrder && ordinal[target.birthOrder] && ['cô', 'chú', 'bác', 'dì', 'cậu', 'anh', 'chị'].includes(base.term.toLocaleLowerCase('vi'))) {
-    return { ...base, term: `${base.term} ${ordinal[target.birthOrder]}` };
+    const prefix = base.term.charAt(0).toUpperCase() + base.term.slice(1);
+    return { ...base, term: `${prefix} ${ordinal[target.birthOrder]}` };
   }
   return base;
 }
