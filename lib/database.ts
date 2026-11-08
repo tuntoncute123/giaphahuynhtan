@@ -11,7 +11,14 @@ export function useDatabase() {
 
 export function database() {
   if (!process.env.DATABASE_URL) throw new Error('Chưa cấu hình DATABASE_URL.');
-  client ??= postgres(process.env.DATABASE_URL, { max: 1, idle_timeout: 20, connect_timeout: 10, prepare: false });
+  const ca = process.env.DATABASE_CA_CERT?.replace(/\\n/g, '\n');
+  client ??= postgres(process.env.DATABASE_URL, {
+    max: 1,
+    idle_timeout: 20,
+    connect_timeout: 10,
+    prepare: false,
+    ...(ca ? { ssl: { ca, rejectUnauthorized: true } } : {})
+  });
   return client;
 }
 
