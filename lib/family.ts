@@ -115,7 +115,7 @@ export function relationshipBetween(firstId: string, secondId: string, members: 
   const first = members.find(m => m.id === firstId); const second = members.find(m => m.id === secondId);
   if (!first || !second) return 'Chọn hai thành viên để tra cứu mối quan hệ.';
   if (first.id === second.id) return 'Bạn đang chọn cùng một thành viên.';
-  if (first.spouseIds.includes(second.id) || second.spouseIds.includes(first.id)) return `${first.fullName} là người phối ngẫu của ${second.fullName}.`;
+  if (first.spouseIds.includes(second.id) || second.spouseIds.includes(first.id)) return `${first.fullName} là ${first.gender === 'Nữ' ? 'vợ' : 'chồng'} của ${second.fullName}.`;
   const ancestors = (id: string) => {
     const depths = new Map<string, number>(); const queue: [string, number][] = [[id, 0]];
     while (queue.length) {

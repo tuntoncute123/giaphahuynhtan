@@ -370,7 +370,7 @@ function VerticalTreeNode({
               <span>{displayYear(person.birthDate)} {person.deathDate ? `– ${displayYear(person.deathDate)}` : '– nay'}</span>
               {spouse.length > 0 && (
                 <span className="vtree-spouse">
-                  <Heart size={10} fill="currentColor" /> {spouse.map(s => s.fullName).join(', ')}
+                  <Heart size={10} fill="currentColor" /> {spouse.map(s => `${s.gender === 'Nữ' ? 'Vợ' : 'Chồng'}: ${s.fullName}`).join(', ')}
                 </span>
               )}
             </div>
@@ -631,7 +631,7 @@ function TreeView({
                 if (!hasDraggedRef.current) openPerson(s.id);
               }}
             >
-              <span className="spouse-heart"><Heart size={12} fill="currentColor" /> Phối ngẫu</span>
+              <span className="spouse-heart"><Heart size={12} fill="currentColor" /> {s.gender === 'Nữ' ? 'Vợ' : 'Chồng'}</span>
               <Avatar person={s} size="small" />
               <strong>{s.fullName}</strong>
               <span>{displayYear(s.birthDate)} {s.deathDate ? `– ${displayYear(s.deathDate)}` : '– nay'}</span>
@@ -954,7 +954,7 @@ function TreeView({
 
         <div className="tree-legend">
           <span><i className="legend-dot" /> Thành viên dòng họ</span>
-          <span><Heart size={14} /> Phối ngẫu</span>
+          <span><Heart size={14} /> Vợ / Chồng</span>
           <span><Move size={14} /> <strong>Giữ chuột và kéo</strong> để di chuyển trên cây</span>
           <span>Giữ <strong>Ctrl + cuộn chuột</strong> để thu phóng</span>
         </div>
@@ -964,7 +964,7 @@ function TreeView({
         <Sprout size={25} />
         <div>
           <strong>Góp một nhánh, giữ trọn cội nguồn</strong>
-          <p>Thêm thông tin cha, mẹ hoặc người phối ngẫu khi tạo hồ sơ để thành viên xuất hiện đúng vị trí trong cây.</p>
+          <p>Thêm thông tin cha, mẹ hoặc vợ/chồng khi tạo hồ sơ để thành viên xuất hiện đúng vị trí trong cây.</p>
         </div>
         <button className="text-link" onClick={addMember}>
           Bổ sung thành viên <ArrowRight size={17} />

@@ -151,10 +151,10 @@ export function addressFor(speakerId: string, targetId: string, members: Member[
 
   // If target married to speaker's parent
   if (speaker.fatherId && target.spouseIds.includes(speaker.fatherId)) {
-    return result(target.gender === 'Nữ' ? 'Mẹ' : 'Cha', 'Người này là phối ngẫu của cha bạn.');
+    return result(target.gender === 'Nữ' ? 'Mẹ' : 'Cha', target.gender === 'Nữ' ? 'Người này là vợ của cha bạn.' : 'Người này là chồng của mẹ bạn.');
   }
   if (speaker.motherId && target.spouseIds.includes(speaker.motherId)) {
-    return result(target.gender === 'Nam' ? 'Cha' : 'Mẹ', 'Người này là phối ngẫu của mẹ bạn.');
+    return result(target.gender === 'Nam' ? 'Cha' : 'Mẹ', target.gender === 'Nam' ? 'Người này là chồng của mẹ bạn.' : 'Người này là vợ của cha bạn.');
   }
 
   // If target is parent of speaker's spouse
@@ -163,7 +163,7 @@ export function addressFor(speakerId: string, targetId: string, members: Member[
     if (sp && (sp.fatherId === target.id || sp.motherId === target.id)) {
       return result(
         target.gender === 'Nam' ? (speaker.gender === 'Nữ' ? 'Bố chồng' : 'Bố vợ') : (speaker.gender === 'Nữ' ? 'Mẹ chồng' : 'Mẹ vợ'),
-        'Người này là cha/mẹ của người phối ngẫu của bạn.'
+        `Người này là cha/mẹ của ${speaker.gender === 'Nữ' ? 'chồng' : 'vợ'} bạn.`
       );
     }
   }
@@ -395,7 +395,7 @@ export function addressFor(speakerId: string, targetId: string, members: Member[
   if (diff === -1) {
     // Bậc Cháu (thế hệ con của anh chị em hoặc anh chị em họ)
     if (targetContext.isSpouse) {
-      return result(target.gender === 'Nữ' ? 'Cháu dâu' : 'Cháu rể', `Người này là phối ngẫu của cháu bạn trong dòng họ.`, speaker.gender === 'Nam' ? 'Bác/Chú' : 'Bác/Cô');
+      return result(target.gender === 'Nữ' ? 'Cháu dâu' : 'Cháu rể', `Người này là ${target.gender === 'Nữ' ? 'vợ' : 'chồng'} của cháu bạn trong dòng họ.`, speaker.gender === 'Nam' ? 'Bác/Chú' : 'Bác/Cô');
     }
     return withNickname(
       result('cháu', `Người này ở thế hệ dưới bạn 1 đời (bậc cháu trong dòng tộc, chung tổ tiên ${lca.fullName}).`, speaker.gender === 'Nam' ? 'Bác/Chú' : 'Cô/Dì'),
@@ -406,7 +406,7 @@ export function addressFor(speakerId: string, targetId: string, members: Member[
   if (diff === -2) {
     // Bậc Cháu gọi bằng Ông/Bà (thế hệ dưới 2 đời)
     if (targetContext.isSpouse) {
-      return result(target.gender === 'Nữ' ? 'Cháu dâu' : 'Cháu rể', `Người này là phối ngẫu của cháu nội/ngoại trong dòng họ.`, speaker.gender === 'Nam' ? 'Ông' : 'Bà');
+      return result(target.gender === 'Nữ' ? 'Cháu dâu' : 'Cháu rể', `Người này là ${target.gender === 'Nữ' ? 'vợ' : 'chồng'} của cháu nội/ngoại trong dòng họ.`, speaker.gender === 'Nam' ? 'Ông' : 'Bà');
     }
     return withNickname(
       result('cháu', `Người này ở dưới bạn 2 đời (gọi bạn bằng ông/bà, chung tổ tiên ${lca.fullName}).`, speaker.gender === 'Nam' ? 'Ông' : 'Bà'),
@@ -417,7 +417,7 @@ export function addressFor(speakerId: string, targetId: string, members: Member[
   if (diff === -3) {
     // Bậc Chắt (dưới 3 đời)
     if (targetContext.isSpouse) {
-      return result(target.gender === 'Nữ' ? 'Chắt dâu' : 'Chắt rể', `Người này là phối ngẫu của chắt trong dòng họ.`, 'Cụ');
+      return result(target.gender === 'Nữ' ? 'Chắt dâu' : 'Chắt rể', `Người này là ${target.gender === 'Nữ' ? 'vợ' : 'chồng'} của chắt bạn trong dòng họ.`, 'Cụ');
     }
     return result('chắt', `Người này ở dưới bạn 3 đời (gọi bạn bằng cụ, chung tổ tiên ${lca.fullName}).`, 'Cụ');
   }
