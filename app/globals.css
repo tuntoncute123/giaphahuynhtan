@@ -919,3 +919,308 @@ h2{font-family:'Charm',cursive;font-weight:700;line-height:1.34;letter-spacing:-
     display: none !important;
   }
 }
+
+/* ====================================================
+   NÂNG CẤP CHỨC NĂNG NGÀY GIỖ (THÊM / CẬP NHẬT NGÀY GIỖ)
+   ==================================================== */
+.memorial-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.add-memorial-btn {
+  background: linear-gradient(135deg, #1f5e38, #164629);
+  padding: 11px 20px;
+  border-radius: 25px;
+  font-size: 14px;
+}
+.add-memorial-btn:hover {
+  background: linear-gradient(135deg, #164629, #0e301b);
+}
+.memorial-filters-bar {
+  background: #fffdf8;
+  border: 1px solid #ebdcc1;
+  border-radius: 14px;
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 14px rgba(50, 40, 20, 0.04);
+}
+.memorial-search-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f9f3e4;
+  border: 1px solid #e1d3b5;
+  border-radius: 20px;
+  padding: 6px 14px;
+  flex: 1;
+  min-width: 260px;
+}
+.memorial-search-box input {
+  border: 0;
+  background: none;
+  font-size: 13px;
+  outline: none;
+  width: 100%;
+}
+.memorial-month-select-wrap label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #554a37;
+  position: relative;
+}
+.memorial-month-select-wrap select {
+  appearance: none;
+  border: 1px solid #dfd0ae;
+  background: #fffdf8;
+  border-radius: 8px;
+  padding: 7px 32px 7px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #3b5c40;
+}
+.memorial-month-select-wrap svg {
+  position: absolute;
+  right: 10px;
+  pointer-events: none;
+  color: #8c7e68;
+}
+.memorial-count-line {
+  font-size: 13px;
+  color: #7b7161;
+  margin-bottom: 20px;
+  padding-left: 4px;
+}
+.memorial-count-line strong {
+  color: #244b35;
+}
+
+/* Memorial Card Redesign */
+.memorial-card {
+  display: flex !important;
+  flex-direction: column !important;
+  background: #fffdf8 !important;
+  border: 1px solid #e5d8be !important;
+  border-radius: 15px !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+  box-shadow: 0 6px 20px rgba(50, 40, 20, 0.05) !important;
+  transition: transform 0.2s, box-shadow 0.2s !important;
+}
+.memorial-card:hover {
+  box-shadow: 0 10px 28px rgba(50, 40, 20, 0.09) !important;
+  transform: translateY(-2px);
+}
+.memorial-card-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 18px 20px;
+  flex: 1;
+}
+.memorial-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  font-size: 24px;
+  font-weight: 700;
+}
+.memorial-icon.icon-person {
+  background: #fbf0dc;
+  color: #aa6b23;
+  border: 1px solid #ebd3a8;
+}
+.memorial-icon.icon-shrine {
+  background: #e8f3ea;
+  color: #276944;
+  border: 1px solid #c7e1ce;
+}
+.memorial-card-info {
+  flex: 1;
+}
+.memorial-card-top-tags {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.memorial-gen-tag {
+  background: #efe4cb;
+  color: #634f2d;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 10px;
+}
+.memorial-card-title {
+  font-size: 19px;
+  line-height: 1.25;
+  margin: 3px 0 4px;
+  color: #173b28;
+}
+.memorial-lineage-text {
+  font-size: 12px;
+  color: #837560;
+  margin: 0 0 6px;
+}
+.memorial-lunar-highlight {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #fdf5e6;
+  border: 1px solid #ebd9b5;
+  color: #a45826;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+.memorial-location-text {
+  display: block;
+  font-size: 12px;
+  color: #7b7364;
+  margin-top: 3px;
+}
+.memorial-countdown-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 5px;
+  padding: 3px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 800;
+  background: #edf1e6;
+  color: #4b6b47;
+}
+.memorial-countdown-tag.is-soon {
+  background: #fef0db;
+  color: #b56214;
+  border: 1px solid #f6d8a7;
+}
+.memorial-countdown-tag.is-today {
+  background: #fde8e7;
+  color: #b62b21;
+  border: 1px solid #f9c0bc;
+}
+
+/* Card Actions */
+.memorial-card-actions {
+  border-top: 1px solid #f0e4cf;
+  background: #fbf7ee;
+  padding: 10px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.card-action-btn {
+  border: 0;
+  background: none;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.card-action-btn:hover {
+  text-decoration: underline;
+}
+.card-action-btn.edit {
+  color: #216139;
+}
+.card-action-btn.view {
+  color: #92542a;
+}
+.card-action-btn.bell {
+  color: #3b5f7e;
+  margin-left: auto;
+}
+
+/* Memorial Edit Modal */
+.memorial-type-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 6px;
+}
+.type-tab-btn {
+  border: 1px solid #dfd0ae;
+  background: #fffdf8;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #5d5341;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.type-tab-btn.active {
+  border-color: #216139;
+  background: #eef6f0;
+  color: #174e2d;
+  font-weight: 800;
+}
+.inferred-anniversary-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #edf6ec;
+  border: 1px solid #c8e6c4;
+  border-radius: 9px;
+  padding: 10px 14px;
+  color: #256637;
+  font-size: 13px;
+}
+.anniversary-fields-sub {
+  background: #faf4e6;
+  border: 1px solid #e7d8b6;
+  border-radius: 10px;
+  padding: 14px;
+  margin-top: 8px;
+}
+
+@media(max-width: 620px) {
+  .memorial-main-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .memorial-toolbar-actions {
+    width: 100%;
+  }
+  .add-memorial-btn {
+    flex: 1;
+    justify-content: center;
+  }
+  .memorial-card-main {
+    flex-wrap: wrap;
+  }
+  .memorial-date {
+    width: 100%;
+    text-align: left !important;
+    padding-left: 64px;
+    margin-top: 4px;
+  }
+  .card-action-btn.bell {
+    margin-left: 0;
+  }
+}

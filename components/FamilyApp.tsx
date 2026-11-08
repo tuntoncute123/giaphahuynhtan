@@ -226,7 +226,7 @@ export default function FamilyApp() {
       {!loading && !serverError && view === 'tree' && <TreeView members={members} openPerson={openPerson} addMember={beginAdd} focusTreeId={focusTreeId} onFocusTreeId={setFocusTreeId} />}
       {!loading && !serverError && view === 'members' && <MembersView members={members} openPerson={openPerson} addMember={beginAdd} exportData={exportData} />}
       {!loading && !serverError && data && view === 'shrines' && <ShrinesView data={data} authenticated={authenticated} onData={setData} onLogin={() => setLoginOpen(true)} onToast={setToast} />}
-      {!loading && !serverError && data && view === 'memorial' && <MemorialView data={data} authenticated={authenticated} onData={setData} onLogin={() => setLoginOpen(true)} onToast={setToast} />}
+      {!loading && !serverError && data && view === 'memorial' && <MemorialView data={data} authenticated={authenticated} onData={setData} onLogin={() => setLoginOpen(true)} onToast={setToast} openPerson={openPerson} />}
       {view === 'documents' && <ContentView kind="document" records={data?.content || []} authenticated={authenticated} add={() => authenticated ? setContentEditing({ kind: 'document', title: '', description: '', date: '', location: '', fileUrl: '' }) : setLoginOpen(true)} edit={record => setContentEditing({ ...record })} remove={removeContent} />}
       {view === 'news' && (
         <NewsView
