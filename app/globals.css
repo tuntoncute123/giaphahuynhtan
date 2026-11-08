@@ -143,8 +143,15 @@ h2{font-family:'Charm',cursive;font-weight:700;line-height:1.34;letter-spacing:-
 /* Phả đồ dọc & Chuyển đổi hiển thị tối ưu trên điện thoại */
 .mobile-view-tabs{display:none}
 .mobile-finder-toggle-btn{display:none}
-.scroll-to-root-btn{display:none}
 .relationship-body{display:contents}
+.tree-scroll{position:relative}
+
+.scroll-to-root-btn{position:absolute;bottom:20px;right:24px;z-index:20;display:inline-flex;align-items:center;gap:7px;background:#1b4b2c;color:#fff;border:1px solid #143d23;border-radius:25px;padding:9px 18px;font-size:13px;font-weight:800;box-shadow:0 6px 20px rgba(20,55,30,.28);cursor:pointer;transition:all .2s}
+.scroll-to-root-btn:hover{background:#133b22;box-shadow:0 8px 24px rgba(20,55,30,.38);transform:translateY(-2px)}
+.scroll-to-root-btn:active{transform:scale(.96);background:#11331d}
+
+.zoom-root-btn{display:inline-flex;align-items:center;gap:5px;background:#245c38!important;color:#fff!important;border:1px solid #1a472b!important;border-radius:7px;font-size:12px;font-weight:800;padding:0 12px!important;height:33px;cursor:pointer;transition:all .15s}
+.zoom-root-btn:hover{background:#1b472b!important}
 
 .vtree-container{padding:14px;background:#fffdf8;border-radius:14px;border:1px solid #e7dbbd}
 .vtree-toolbar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:14px;padding-bottom:11px;border-bottom:1px dashed #e3d3b0;flex-wrap:wrap}
@@ -182,8 +189,8 @@ h2{font-family:'Charm',cursive;font-weight:700;line-height:1.34;letter-spacing:-
   .relationship-body{display:none;width:100%;margin-top:10px}
   .relationship-body.mobile-open{display:flex;flex-direction:column;gap:12px}
   
-  .scroll-to-root-btn{position:absolute;bottom:16px;right:16px;z-index:20;display:inline-flex;align-items:center;gap:6px;background:#245c38;color:#fff;border:1px solid #1a472b;border-radius:25px;padding:8px 14px;font-size:12px;font-weight:800;box-shadow:0 6px 18px rgba(25,60,35,.28);cursor:pointer}
-  .scroll-to-root-btn:active{transform:scale(.96);background:#1c472b}
+  .scroll-to-root-btn{bottom:14px;right:14px;padding:7px 13px;font-size:12px}
+  .zoom-root-btn{display:none}
 }
 
 @media(max-width:620px){

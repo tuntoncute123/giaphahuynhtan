@@ -860,6 +860,9 @@ function TreeView({
               <button aria-label="Phóng to" title="Phóng to (tối đa 200%)" onClick={zoomIn}><Plus size={17} /></button>
               <button title="Thu nhỏ toàn cảnh (20%)" onClick={zoomOverview}>20%</button>
               <button title="Đặt lại kích thước chuẩn (100%)" onClick={zoomReset}>100%</button>
+              <button title="Cuộn về Cụ Tổ Đời 1" className="zoom-root-btn" onClick={scrollToRoot}>
+                <Sprout size={15} /> Về Cụ Tổ
+              </button>
             </div>
           )}
         </div>
