@@ -1,0 +1,9 @@
+node_modules
+.next
+.env*
+!.env.example
+*.tsbuildinfo
+
+public/uploads/
+data/family.json
+data/zalo-tokens.json

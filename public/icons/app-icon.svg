@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <radialGradient id="paper" cx="50%" cy="35%" r="75%">
+      <stop stop-color="#fff8e7"/>
+      <stop offset="1" stop-color="#ecd8a9"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#paper)"/>
+  <circle cx="365" cy="146" r="63" fill="#bd3c28"/>
+  <path d="M90 368c49-10 89-7 130 3 46 11 88 13 131-2 26-9 51-12 72-9" fill="none" stroke="#c89b54" stroke-width="13" stroke-linecap="round"/>
+  <path d="M256 343V215m0 109c-11-39-47-63-84-79m84 72c11-39 47-63 84-79" fill="none" stroke="#7a4b2a" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M256 338c-16 21-38 34-68 39m68-39c15 23 36 36 66 43m-66-42v49" fill="none" stroke="#7a4b2a" stroke-width="15" stroke-linecap="round"/>
+  <path d="M165 252c-51-2-65-50-27-78 9-44 60-57 89-28 23-30 76-24 91 9 47-16 78 27 56 62 27 45-14 78-57 62-31 24-67 17-86-2-28 19-57 9-66-25Z" fill="#226744"/>
+  <path d="M127 207c19-10 31-7 42 1m49-58c22 1 37 10 42 26m60 32c18-10 33-10 48-2m-208 42c17 2 26 8 31 19m85-2c20-10 36-9 51-1" fill="none" stroke="#3f8755" stroke-width="16" stroke-linecap="round"/>
+  <path d="M102 411h308" stroke="#96352b" stroke-width="13" stroke-linecap="round"/>
+</svg>
