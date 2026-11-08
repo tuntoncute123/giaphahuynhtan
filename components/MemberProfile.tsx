@@ -5,7 +5,7 @@ import { childrenOf, descendantsOf, displayYear, fullDate, generationOf, sibling
 import { anniversaryFromSolar, anniversaryLabel, nextOccurrence, vietnamToday } from '@/lib/lunar';
 import { directionsUrl } from '@/lib/location';
 
-function Avatar({ person, large = false }: { person: Member; large?: boolean }) { return <div className={`avatar ${large ? 'avatar-large' : 'avatar-small'} ${person.gender === 'Nữ' ? 'avatar-female' : ''}`}>{person.avatar ? <img src={person.avatar} alt="" /> : person.fullName.split(' ').slice(-2).map(word => word[0]).join('').toUpperCase()}</div>; }
+function Avatar({ person, large = false }: { person: Member; large?: boolean }) { return <div className={`avatar ${large ? 'avatar-large' : 'avatar-small'} ${person.gender === 'Nữ' ? 'avatar-female' : ''}`}>{person.avatar ? <img src={person.avatar} alt="" /> : <span className="avatar-text">{person.fullName.split(' ').slice(-2).map(word => word[0]).join('').toUpperCase()}</span>}</div>; }
 export default function MemberProfile({ person, members, authenticated, close, openPerson, edit, remove, goTree }: { person: Member; members: Member[]; authenticated: boolean; close: () => void; openPerson: (id: string) => void; edit: () => void; remove: () => void; goTree: () => void }) {
   const father = members.find(m => m.id === person.fatherId); const mother = members.find(m => m.id === person.motherId);
   const spouses = person.spouseIds.map(id => members.find(m => m.id === id)).filter((m): m is Member => !!m);

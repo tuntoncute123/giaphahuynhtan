@@ -22,7 +22,11 @@ const pageTitle: Record<View, string> = { home: 'Trang chủ', tree: 'Cây gia p
 
 function initials(name: string) { return name.split(' ').slice(-2).map(x => x[0]).join('').toUpperCase(); }
 function Avatar({ person, size = 'normal' }: { person: Member; size?: 'normal' | 'large' | 'small' }) {
-  return <div className={`avatar avatar-${size} ${person.gender === 'Nữ' ? 'avatar-female' : ''}`}>{person.avatar ? <img src={person.avatar} alt="" /> : initials(person.fullName)}</div>;
+  return (
+    <div className={`avatar avatar-${size} ${person.gender === 'Nữ' ? 'avatar-female' : ''}`}>
+      {person.avatar ? <img src={person.avatar} alt="" /> : <span className="avatar-text">{initials(person.fullName)}</span>}
+    </div>
+  );
 }
 function Ornament() { return <span className="ornament" aria-hidden="true"><span />✦<span /></span>; }
 
