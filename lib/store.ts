@@ -10,7 +10,7 @@ import { database, ensureDatabase, useDatabase } from './database';
 const file = path.join(process.cwd(), 'data', 'family.json');
 let previousWrite: Promise<unknown> = Promise.resolve();
 export async function readFamily(): Promise<FamilyData> {
-  let raw: FamilyData;
+  let raw: FamilyData | string;
   if (useDatabase()) {
     await ensureDatabase();
     const rows = await database()`SELECT data FROM app_state WHERE key = 'family'`;
@@ -21,18 +21,23 @@ export async function readFamily(): Promise<FamilyData> {
   }
   return normalizeFamily(raw);
 }
-function normalizeFamily(raw: FamilyData): FamilyData {
+function normalizeFamily(raw: FamilyData | string): FamilyData {
+  if (typeof raw === 'string') {
+    try { raw = JSON.parse(raw); } catch { raw = structuredClone(seedData); }
+  }
+  const parsed = (raw && typeof raw === 'object' ? raw : structuredClone(seedData)) as FamilyData;
   return {
-    ...raw,
-    members: (raw.members || []).map(normalizeMember),
-    shrines: (raw.shrines || []).map((item): Shrine => ({ ...item, name: String(item.name || ''), description: String(item.description || ''), location: normalizeLocation(item.location), caretakerId: item.caretakerId || null, ceremony: normalizeAnniversary(item.ceremony) })),
-    reminders: raw.reminders || [], reminderLogs: raw.reminderLogs || [], content: raw.content || []
+    ...parsed,
+    members: (parsed.members || []).map(normalizeMember),
+    shrines: (parsed.shrines || []).map((item): Shrine => ({ ...item, name: String(item.name || ''), description: String(item.description || ''), location: normalizeLocation(item.location), caretakerId: item.caretakerId || null, ceremony: normalizeAnniversary(item.ceremony) })),
+    reminders: parsed.reminders || [], reminderLogs: parsed.reminderLogs || [], content: parsed.content || []
   };
 }
 export async function saveFamily(data: FamilyData) {
   if (useDatabase()) {
     await ensureDatabase();
-    await database()`INSERT INTO app_state (key, data) VALUES ('family', ${JSON.stringify(data)}::jsonb)
+    const db = database();
+    await db`INSERT INTO app_state (key, data) VALUES ('family', ${db.json(data)})
       ON CONFLICT (key) DO UPDATE SET data = EXCLUDED.data`;
     return;
   }
@@ -44,14 +49,15 @@ export async function saveFamily(data: FamilyData) {
 export async function updateFamily<T>(mutate: (data: FamilyData) => Promise<T> | T): Promise<{ data: FamilyData; result: T }> {
   if (useDatabase()) {
     await ensureDatabase();
-    return database().begin(async transaction => {
-      await transaction`INSERT INTO app_state (key, data) VALUES ('family', ${JSON.stringify(seedData)}::jsonb)
+    const db = database();
+    return db.begin(async transaction => {
+      await transaction`INSERT INTO app_state (key, data) VALUES ('family', ${db.json(seedData)})
         ON CONFLICT (key) DO NOTHING`;
       const rows = await transaction`SELECT data FROM app_state WHERE key = 'family' FOR UPDATE`;
       const data = normalizeFamily(rows[0].data as FamilyData);
       const result = await mutate(data);
       data.updatedAt = new Date().toISOString();
-      await transaction`UPDATE app_state SET data = ${JSON.stringify(data)}::jsonb WHERE key = 'family'`;
+      await transaction`UPDATE app_state SET data = ${db.json(data)} WHERE key = 'family'`;
       return { data, result };
     });
   }

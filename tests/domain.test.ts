@@ -3,7 +3,7 @@ import test from 'node:test';
 import { getLunarDate } from '@dqcai/vn-lunar';
 import type { Member } from '../lib/types';
 import { addressFor } from '../lib/kinship';
-import { matchesMember } from '../lib/family';
+import { bySeniority, childrenOf, matchesMember } from '../lib/family';
 import { anniversaryFromSolar, nextOccurrence, solarOccurrence } from '../lib/lunar';
 import { directionsUrl } from '../lib/location';
 
@@ -76,4 +76,46 @@ test('tìm biệt danh không dấu và xưng hô theo nhánh gia đình', () =>
   assert.equal(addressFor('ht-10', 'ht-03', members).term, 'ông nội');
   assert.equal(addressFor('ht-11', 'ht-10', members).term, 'anh');
   assert.equal(addressFor('ht-10', 'ht-02', members).term, 'cụ');
+});
+
+test('cây gia phả sắp xếp anh từ trái qua phải rồi mới đến em theo đúng gia phả', () => {
+  const file = `${process.cwd()}/data/family.json`;
+  const { readFileSync } = require('node:fs');
+  const familyData = JSON.parse(readFileSync(file, 'utf8'));
+  const allMembers: Member[] = familyData.members;
+
+  // 1. Kiểm tra 9 con của cụ Huỳnh Tấn Hiền
+  const hienChildren = childrenOf('ht-hien', allMembers);
+  assert.equal(hienChildren.length, 9);
+  assert.equal(hienChildren[0].fullName, 'Huỳnh Tấn Trường'); // Con trưởng
+  assert.equal(hienChildren[1].fullName, 'Huỳnh Tấn Thọ');
+  assert.equal(hienChildren[2].fullName, 'Huỳnh Tấn Tu');
+  assert.equal(hienChildren[3].fullName, 'Huỳnh Tấn Liên');
+  assert.equal(hienChildren[4].fullName, 'Huỳnh Thị Đợi');
+  assert.equal(hienChildren[8].fullName, 'Huỳnh Thị Toán'); // Con út
+
+  // 2. Kiểm tra 13 con của cụ Huỳnh Tấn Tu
+  const tuChildren = childrenOf('ht-tu', allMembers);
+  assert.equal(tuChildren.length, 13);
+  assert.equal(tuChildren[0].fullName, 'Huỳnh Tấn Cự'); // Nhánh A (Trưởng nam)
+  assert.equal(tuChildren[1].fullName, 'Huỳnh Tấn Địch');
+  assert.equal(tuChildren[8].fullName, 'Huỳnh Tấn Tũng'); // Nhánh B
+  assert.equal(tuChildren[9].fullName, 'Huỳnh Tấn Đoan'); // Nhánh C
+  assert.equal(tuChildren[12].fullName, 'Huỳnh Thị Lý'); // Con út
+
+  // 3. Kiểm tra 3 con của cụ Huỳnh Tấn Cự (Nhánh A)
+  const cuChildren = childrenOf('ht-cu', allMembers);
+  assert.deepEqual(cuChildren.map(c => c.fullName), [
+    'Huỳnh Tấn Nghi', // A.1
+    'Huỳnh Tấn Chừ',   // A.2
+    'Huỳnh Tấn Ry'     // A.3
+  ]);
+
+  // 4. Kiểm tra 11 con của cụ Huỳnh Tấn Đoan (Nhánh C)
+  const doanChildren = childrenOf('ht-doan', allMembers);
+  assert.equal(doanChildren[0].fullName, 'Huỳnh Thị Pháng'); // C.1
+  assert.equal(doanChildren[1].fullName, 'Huỳnh Thị Châu');   // C.2
+  assert.equal(doanChildren[2].fullName, 'Huỳnh Tấn Sa');     // C.3
+  assert.equal(doanChildren[4].fullName, 'Huỳnh Tấn Nhung');  // C.5
+  assert.equal(doanChildren[10].fullName, 'Huỳnh Tấn Bổ');   // C.11
 });

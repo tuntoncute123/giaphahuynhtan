@@ -5,6 +5,13 @@ import { normalizeAnniversary } from './lunar';
 export const displayYear = (date: string) => date ? date.slice(0, 4) : '—';
 export const fullDate = (date: string) => date ? new Date(`${date}T00:00:00`).toLocaleDateString('vi-VN') : 'Chưa cập nhật';
 export const byName = (a: Member, b: Member) => a.fullName.localeCompare(b.fullName, 'vi');
+export const bySeniority = (a: Member, b: Member) => {
+  if (a.birthOrder != null && b.birthOrder != null) return a.birthOrder - b.birthOrder;
+  if (a.birthOrder != null) return -1;
+  if (b.birthOrder != null) return 1;
+  if (a.birthDate && b.birthDate) return a.birthDate.localeCompare(b.birthDate);
+  return a.fullName.localeCompare(b.fullName, 'vi');
+};
 export const normalizeSearch = (value: string) => value.toLocaleLowerCase('vi').normalize('NFD').replace(/\p{Diacritic}/gu, '').replace(/đ/g, 'd').trim();
 export function matchesMember(person: Member, query: string) {
   const needle = normalizeSearch(query);
@@ -30,11 +37,11 @@ export function generationOf(id: string, members: Member[], visiting = new Set<s
 }
 
 export function childrenOf(id: string, members: Member[]): Member[] {
-  return members.filter(m => m.fatherId === id || m.motherId === id).sort(byName);
+  return members.filter(m => m.fatherId === id || m.motherId === id).sort(bySeniority);
 }
 export function siblingsOf(person: Member, members: Member[]): Member[] {
   if (!person.fatherId && !person.motherId) return [];
-  return members.filter(m => m.id !== person.id && ((person.fatherId && m.fatherId === person.fatherId) || (person.motherId && m.motherId === person.motherId))).sort(byName);
+  return members.filter(m => m.id !== person.id && ((person.fatherId && m.fatherId === person.fatherId) || (person.motherId && m.motherId === person.motherId))).sort(bySeniority);
 }
 export function descendantsOf(id: string, members: Member[], visited = new Set<string>()): Member[] {
   if (visited.has(id)) return [];
