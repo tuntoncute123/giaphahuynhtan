@@ -69,3 +69,5 @@ Vercel không dùng `data/family.json`, `data/zalo-tokens.json` hay `public/uplo
 Khi chạy trên máy riêng và không đặt `DATABASE_URL`/`BLOB_READ_WRITE_TOKEN`, ứng dụng vẫn dùng `data/family.json`, `data/zalo-tokens.json` và `public/uploads` như trước. Nếu muốn thử đúng cấu hình Production ở máy, đặt hai biến này trong `.env.local`.
 
 Kiểm tra bằng `npm test`, `npm run typecheck` và `npm run build`.
+
+Dữ liệu từ bản Word được đối chiếu và seed bằng `scripts/seed-tan-gia-pha.ts`; kết quả và các mục cần xác minh nằm trong `docs/tan-gia-pha-2023.md`.
