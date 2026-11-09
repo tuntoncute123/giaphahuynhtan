@@ -13,6 +13,20 @@ export const bySeniority = (a: Member, b: Member) => {
   return a.fullName.localeCompare(b.fullName, 'vi');
 };
 export const normalizeSearch = (value: string) => value.toLocaleLowerCase('vi').normalize('NFD').replace(/\p{Diacritic}/gu, '').replace(/đ/g, 'd').trim();
+// Client data is replaced with a new array after each edit. Cache lookups for that
+// immutable snapshot; server-side validation keeps reading the current array.
+const memberIndexCache = new WeakMap<Member[], Map<string, Member>>();
+const generationCache = new WeakMap<Member[], Map<string, number>>();
+const childrenCache = new WeakMap<Member[], Map<string, Member[]>>();
+function memberIndex(members: Member[]): Map<string, Member> | null {
+  if (typeof window === 'undefined') return null;
+  let index = memberIndexCache.get(members);
+  if (!index) {
+    index = new Map(members.map(member => [member.id, member]));
+    memberIndexCache.set(members, index);
+  }
+  return index;
+}
 export function matchesMember(person: Member, query: string) {
   const needle = normalizeSearch(query);
   return !needle || [person.fullName, ...person.aliases].some(value => normalizeSearch(value).includes(needle));
@@ -67,23 +81,36 @@ export function normalizeZaloPhone(value: string): string {
 }
 
 export function generationOf(id: string, members: Member[], visiting = new Set<string>()): number {
+  const cache = typeof window !== 'undefined' && visiting.size === 0
+    ? (generationCache.get(members) || new Map<string, number>()) : null;
+  if (cache && !generationCache.has(members)) generationCache.set(members, cache);
+  const cached = cache?.get(id);
+  if (cached !== undefined) return cached;
   if (visiting.has(id)) return 1;
-  const person = members.find(m => m.id === id);
+  const index = memberIndex(members);
+  const person = index ? index.get(id) : members.find(m => m.id === id);
   if (!person) return 1;
   const next = new Set(visiting).add(id);
-  const parents = [person.fatherId, person.motherId].filter((x): x is string => !!x && members.some(m => m.id === x));
-  if (parents.length) return 1 + Math.max(...parents.map(p => generationOf(p, members, next)));
-  const spouse = person.spouseIds.map(s => members.find(m => m.id === s)).find(s => s && (s.fatherId || s.motherId));
-  if (spouse) return generationOf(spouse.id, members, next);
-  return 1;
+  const parents = [person.fatherId, person.motherId].filter((x): x is string => !!x && (index ? index.has(x) : members.some(m => m.id === x)));
+  let result = 1;
+  if (parents.length) result = 1 + Math.max(...parents.map(p => generationOf(p, members, next)));
+  else {
+    const spouse = person.spouseIds.map(s => index ? index.get(s) : members.find(m => m.id === s)).find(s => s && (s.fatherId || s.motherId));
+    if (spouse) result = generationOf(spouse.id, members, next);
+  }
+  cache?.set(id, result);
+  return result;
 }
 
 export function childrenOf(id: string, members: Member[]): Member[] {
-  const person = members.find(m => m.id === id);
+  const index = memberIndex(members);
+  const cached = childrenCache.get(members)?.get(id);
+  if (index && cached) return cached;
+  const person = index ? index.get(id) : members.find(m => m.id === id);
   if (!person) return [];
   const spouseIds = person.spouseIds || [];
 
-  return members.filter(m => {
+  const children = members.filter(m => {
     // 1. Trực tiếp là cha hoặc mẹ của con
     if (m.fatherId === id || m.motherId === id) return true;
 
@@ -91,7 +118,7 @@ export function childrenOf(id: string, members: Member[]): Member[] {
     if (spouseIds.length > 0) {
       if (m.fatherId && spouseIds.includes(m.fatherId)) {
         if (!m.motherId || m.motherId === id || spouseIds.includes(m.motherId)) return true;
-        const childMother = members.find(x => x.id === m.motherId);
+        const childMother = index ? index.get(m.motherId) : members.find(x => x.id === m.motherId);
         if (childMother && person.spouseIds.some(s => childMother.spouseIds.includes(s))) return true;
       }
       if (m.motherId && spouseIds.includes(m.motherId)) {
@@ -100,6 +127,12 @@ export function childrenOf(id: string, members: Member[]): Member[] {
     }
     return false;
   }).sort(bySeniority);
+  if (index) {
+    let cache = childrenCache.get(members);
+    if (!cache) { cache = new Map(); childrenCache.set(members, cache); }
+    cache.set(id, children);
+  }
+  return children;
 }
 export function siblingsOf(person: Member, members: Member[]): Member[] {
   if (!person.fatherId && !person.motherId) return [];

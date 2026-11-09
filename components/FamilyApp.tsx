@@ -648,17 +648,12 @@ function TreeView({
 
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
 
-  // Tự động mở rộng 2 đời đầu khi khởi tạo
+  // Bắt đầu với các nhánh đầu tiên; những đời sâu hơn mở khi người xem yêu cầu.
   useEffect(() => {
     if (members.length > 0) {
       setExpandedIds(prev => {
         if (prev.size > 0) return prev;
-        const initial = new Set<string>();
-        roots.forEach(r => {
-          initial.add(r.id);
-          childrenOf(r.id, members).forEach(c => initial.add(c.id));
-        });
-        return initial;
+        return new Set(roots.map(r => r.id));
       });
     }
   }, [members, roots]);
@@ -678,15 +673,14 @@ function TreeView({
   };
 
   const collapseToRoot = () => {
-    setExpandedIds(new Set(roots.map(r => r.id)));
+    setExpandedIds(new Set([...roots.map(r => r.id), ...(focusTreeId ? [focusTreeId] : [])]));
   };
 
   useEffect(() => {
     if (focusTreeId) {
-      const desc = descendantsOf(focusTreeId, members).map(m => m.id);
-      setExpandedIds(prev => new Set([...prev, focusTreeId, ...desc]));
+      setExpandedIds(prev => new Set([...prev, focusTreeId]));
     }
-  }, [focusTreeId, members]);
+  }, [focusTreeId]);
 
   const scrollToRoot = () => {
     setZoom(1);
@@ -706,7 +700,8 @@ function TreeView({
     const spouse = person.spouseIds.map(id => members.find(m => m.id === id)).filter((x): x is Member => !!x);
     spouse.forEach(s => next.add(s.id));
     const children = childrenOf(person.id, members);
-    const uniqueChildren = children.filter((m, i) => children.findIndex(c => c.id === m.id) === i);
+    const uniqueChildren = [...new Map(children.map(child => [child.id, child])).values()];
+    const canExpand = uniqueChildren.length > 0 && generationOf(person.id, members) < maxGen;
 
     return (
       <div className="tree-node" key={person.id}>
@@ -737,7 +732,11 @@ function TreeView({
             </button>
           ))}
         </div>
-        {uniqueChildren.length > 0 && generationOf(person.id, members) < maxGen && (
+        {canExpand && <button type="button" className="vtree-action-btn" style={{ marginTop: 10 }} onClick={() => toggleExpand(person.id)} aria-expanded={expandedIds.has(person.id)}>
+          {expandedIds.has(person.id) ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+          {expandedIds.has(person.id) ? 'Thu gọn' : `Xem ${uniqueChildren.length} người con`}
+        </button>}
+        {canExpand && expandedIds.has(person.id) && (
           <div className="tree-children">
             {uniqueChildren.map(child => renderNode(child, next))}
           </div>
@@ -989,21 +988,15 @@ function TreeView({
           </div>
         )}
 
+        <div className="vtree-toolbar" style={{ margin: 0, padding: '10px 16px' }}>
+          <span className="vtree-count-text">Hiển thị <strong>{shown.length}</strong> nhánh chính · <strong>{members.length}</strong> thành viên trong dữ liệu</span>
+          <div className="vtree-actions">
+            <button type="button" className="vtree-action-btn" onClick={expandAll}><Plus size={13} /> Mở tất cả</button>
+            <button type="button" className="vtree-action-btn" onClick={collapseToRoot}><Minus size={13} /> Thu gọn về Đời 2</button>
+          </div>
+        </div>
         {viewMode === 'list' ? (
           <div className="vtree-container">
-            <div className="vtree-toolbar">
-              <span className="vtree-count-text">
-                Hiển thị <strong>{shown.length}</strong> nhánh chính · <strong>{members.length}</strong> thành viên
-              </span>
-              <div className="vtree-actions">
-                <button type="button" className="vtree-action-btn" onClick={expandAll}>
-                  <Plus size={13} /> Mở tất cả
-                </button>
-                <button type="button" className="vtree-action-btn" onClick={collapseToRoot}>
-                  <Minus size={13} /> Thu gọn về Đời 2
-                </button>
-              </div>
-            </div>
             <div className="vtree-list">
               {shown.length ? (
                 shown.map(root => (
@@ -1078,9 +1071,12 @@ function TreeView({
 
 function MembersView({ members, openPerson, addMember, exportData }: { members: Member[]; openPerson: (id: string) => void; addMember: () => void; exportData: () => void }) {
   const [search, setSearch] = useState(''); const [generation, setGeneration] = useState('all'); const [gender, setGender] = useState('all');
-  const gens = members.length ? Math.max(...members.map(m => generationOf(m.id, members))) : 0;
-  const filtered = members.filter(m => matchesMember(m, search) && (generation === 'all' || generationOf(m.id, members) === Number(generation)) && (gender === 'all' || m.gender === gender)).sort((a,b) => generationOf(a.id,members) - generationOf(b.id,members) || bySeniority(a,b));
-  return <section className="members-section container"><div className="section-toolbar"><div><span className="section-kicker">DANH SÁCH DÒNG HỌ</span><h2>Gương mặt qua các thế hệ</h2><p>Tìm kiếm, xem quan hệ và cập nhật thông tin thành viên.</p></div><div className="toolbar-actions"><button className="outline-btn" onClick={exportData}><Download size={17} /> Xuất dữ liệu</button><button className="primary-btn" onClick={addMember}><Plus size={17} /> Thêm thành viên</button></div></div><div className="directory-filters"><div className="search-box"><Search size={19} /><input aria-label="Tìm thành viên" value={search} onChange={e => setSearch(e.target.value)} placeholder="Tìm tên, biệt danh, ví dụ: cô Bảy..." /></div><div className="select-wrap"><select aria-label="Lọc theo đời" value={generation} onChange={e => setGeneration(e.target.value)}><option value="all">Tất cả đời</option>{Array.from({ length: gens }, (_, i) => i+1).map(n => <option key={n} value={n}>Đời thứ {n}</option>)}</select><ChevronDown size={16} /></div><div className="select-wrap"><select aria-label="Lọc theo giới tính" value={gender} onChange={e => setGender(e.target.value)}><option value="all">Tất cả</option><option>Nam</option><option>Nữ</option><option>Khác</option></select><ChevronDown size={16} /></div></div><div className="result-count">Hiển thị <strong>{filtered.length}</strong> / {members.length} thành viên</div><div className="member-grid">{filtered.map(m => <button className="member-card" key={m.id} onClick={() => openPerson(m.id)}><div className="member-card-top"><Avatar person={m} /><span className="pill">Đời thứ {generationOf(m.id, members)}</span></div><h3>{m.fullName}</h3>{m.aliases.length > 0 && <div className="member-aliases">{m.aliases.slice(0, 2).join(" · ")}</div>}<p>{displayYear(m.birthDate)} {m.deathDate ? `– ${displayYear(m.deathDate)}` : '– nay'}</p><div className="member-card-meta"><span><MapPin size={14} /> {m.birthPlace || 'Chưa cập nhật quê quán'}</span><span><Users size={14} /> {childrenOf(m.id,members).length} người con</span></div><span className="card-link">Xem hồ sơ <ArrowRight size={16} /></span></button>)}</div>{!filtered.length && <div className="empty-state">Không tìm thấy thành viên phù hợp. Hãy thử bộ lọc khác.</div>}<p className="demo-note">Dữ liệu được trích lục và đối chiếu theo cuốn Phụng dịch quốc ngữ Huỳnh Tấn Tộc.</p></section>;
+  const [visibleCount, setVisibleCount] = useState(48);
+  useEffect(() => { setVisibleCount(48); }, [search, generation, gender]);
+  const gens = useMemo(() => members.length ? Math.max(...members.map(m => generationOf(m.id, members))) : 0, [members]);
+  const filtered = useMemo(() => members.filter(m => matchesMember(m, search) && (generation === 'all' || generationOf(m.id, members) === Number(generation)) && (gender === 'all' || m.gender === gender)).sort((a,b) => generationOf(a.id,members) - generationOf(b.id,members) || bySeniority(a,b)), [members, search, generation, gender]);
+  const visible = filtered.slice(0, visibleCount);
+  return <section className="members-section container"><div className="section-toolbar"><div><span className="section-kicker">DANH SÁCH DÒNG HỌ</span><h2>Gương mặt qua các thế hệ</h2><p>Tìm kiếm, xem quan hệ và cập nhật thông tin thành viên.</p></div><div className="toolbar-actions"><button className="outline-btn" onClick={exportData}><Download size={17} /> Xuất dữ liệu</button><button className="primary-btn" onClick={addMember}><Plus size={17} /> Thêm thành viên</button></div></div><div className="directory-filters"><div className="search-box"><Search size={19} /><input aria-label="Tìm thành viên" value={search} onChange={e => setSearch(e.target.value)} placeholder="Tìm tên, biệt danh, ví dụ: cô Bảy..." /></div><div className="select-wrap"><select aria-label="Lọc theo đời" value={generation} onChange={e => setGeneration(e.target.value)}><option value="all">Tất cả đời</option>{Array.from({ length: gens }, (_, i) => i+1).map(n => <option key={n} value={n}>Đời thứ {n}</option>)}</select><ChevronDown size={16} /></div><div className="select-wrap"><select aria-label="Lọc theo giới tính" value={gender} onChange={e => setGender(e.target.value)}><option value="all">Tất cả</option><option>Nam</option><option>Nữ</option><option>Khác</option></select><ChevronDown size={16} /></div></div><div className="result-count">Hiển thị <strong>{visible.length}</strong> / {filtered.length} thành viên phù hợp ({members.length} trong gia phả)</div><div className="member-grid">{visible.map(m => <button className="member-card" key={m.id} onClick={() => openPerson(m.id)}><div className="member-card-top"><Avatar person={m} /><span className="pill">Đời thứ {generationOf(m.id, members)}</span></div><h3>{m.fullName}</h3>{m.aliases.length > 0 && <div className="member-aliases">{m.aliases.slice(0, 2).join(" · ")}</div>}<p>{displayYear(m.birthDate)} {m.deathDate ? `– ${displayYear(m.deathDate)}` : '– nay'}</p><div className="member-card-meta"><span><MapPin size={14} /> {m.birthPlace || 'Chưa cập nhật quê quán'}</span><span><Users size={14} /> {childrenOf(m.id,members).length} người con</span></div><span className="card-link">Xem hồ sơ <ArrowRight size={16} /></span></button>)}</div>{visibleCount < filtered.length && <div style={{ textAlign: 'center', marginTop: 26 }}><button type="button" className="outline-btn" onClick={() => setVisibleCount(count => count + 48)}>Xem thêm thành viên</button></div>}{!filtered.length && <div className="empty-state">Không tìm thấy thành viên phù hợp. Hãy thử bộ lọc khác.</div>}<p className="demo-note">Dữ liệu được trích lục và đối chiếu theo cuốn Phụng dịch quốc ngữ Huỳnh Tấn Tộc.</p></section>;
 }
 
 function LoginModal({ close, success }: { close: () => void; success: () => void }) {
