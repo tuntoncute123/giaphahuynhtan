@@ -903,13 +903,13 @@ function TreeView({
                         >
                           <Avatar person={m} size="small" />
                           <div className="tree-dropdown-item-info">
-                            <div className="tree-item-title-row">
+                            <span className="tree-item-title-row">
                               <strong>{m.fullName}</strong>
                               <span className="tree-item-gen-tag">Đời {generationOf(m.id, members)}</span>
                               {hasDuplicateName(m, members) && (
                                 <span className="duplicate-tag" title="Tên này có người trùng trong dòng họ">Trùng tên</span>
                               )}
-                            </div>
+                            </span>
                             {lineageOf(m, members) && (
                               <span className="tree-item-lineage">{lineageOf(m, members)}</span>
                             )}
