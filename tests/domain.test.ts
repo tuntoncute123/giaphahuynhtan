@@ -3,7 +3,7 @@ import test from 'node:test';
 import { getLunarDate } from '@dqcai/vn-lunar';
 import type { Member } from '../lib/types';
 import { addressFor } from '../lib/kinship';
-import { bySeniority, childrenOf, descendantsOf, matchesMember } from '../lib/family';
+import { bySeniority, childrenOf, descendantsOf, matchesMember, siblingsOfRecordedParents } from '../lib/family';
 import { anniversaryFromSolar, nextOccurrence, solarOccurrence } from '../lib/lunar';
 import { directionsUrl } from '../lib/location';
 
@@ -76,6 +76,17 @@ test('tìm biệt danh không dấu và xưng hô theo nhánh gia đình', () =>
   assert.equal(addressFor('ht-10', 'ht-03', members).term, 'ông nội');
   assert.equal(addressFor('ht-11', 'ht-10', members).term, 'anh');
   assert.equal(addressFor('ht-10', 'ht-02', members).term, 'cụ');
+});
+
+test('xem đời trước chỉ gọi anh chị em ruột khi cả cha và mẹ trùng khớp', () => {
+  const members: Member[] = [
+    { ...baseMember, id: 'a', fullName: 'Con A', fatherId: 'f', motherId: 'm1' },
+    { ...baseMember, id: 'b', fullName: 'Con B', fatherId: 'f', motherId: 'm1' },
+    { ...baseMember, id: 'c', fullName: 'Con khác mẹ', fatherId: 'f', motherId: 'm2' },
+    { ...baseMember, id: 'd', fullName: 'Chỉ ghi cha', fatherId: 'f' }
+  ];
+  assert.deepEqual(siblingsOfRecordedParents(members[0], members).map(member => member.id), ['b']);
+  assert.deepEqual(siblingsOfRecordedParents(members[3], members).map(member => member.id).sort(), ['a', 'b', 'c']);
 });
 
 test('cây gia phả sắp xếp anh từ trái qua phải rồi mới đến em theo đúng gia phả', () => {

@@ -138,6 +138,16 @@ export function siblingsOf(person: Member, members: Member[]): Member[] {
   if (!person.fatherId && !person.motherId) return [];
   return members.filter(m => m.id !== person.id && ((person.fatherId && m.fatherId === person.fatherId) || (person.motherId && m.motherId === person.motherId))).sort(bySeniority);
 }
+// Use both parents when known, so a family view never calls half siblings full siblings.
+// With only one recorded parent, callers must describe the result as unconfirmed.
+export function siblingsOfRecordedParents(person: Member, members: Member[]): Member[] {
+  if (!person.fatherId && !person.motherId) return [];
+  return members.filter(member => member.id !== person.id && (
+    person.fatherId && person.motherId
+      ? member.fatherId === person.fatherId && member.motherId === person.motherId
+      : person.fatherId ? member.fatherId === person.fatherId : member.motherId === person.motherId
+  )).sort(bySeniority);
+}
 export function descendantsOf(id: string, members: Member[], visited = new Set<string>()): Member[] {
   if (visited.has(id)) return [];
   visited.add(id);

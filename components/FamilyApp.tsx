@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowRight, BellRing, BookOpen, CalendarDays, Camera, ChevronDown, ChevronRight, ChevronUp, Download, Edit3, Heart, Landmark, Leaf, ListTree, MapPin, Menu, Minus, Move, Network, Phone, Plus, Search, ShieldCheck, Sprout, Trash2, TreePine, UserRound, Users, X } from 'lucide-react';
 import type { ContentRecord, FamilyData, Member } from '@/lib/types';
-import { byName, bySeniority, childrenOf, descendantsOf, displayYear, fullDate, generationOf, hasDuplicateName, lineageOf, matchesMember } from '@/lib/family';
+import { byName, bySeniority, childrenOf, descendantsOf, displayYear, fullDate, generationOf, hasDuplicateName, lineageOf, matchesMember, siblingsOfRecordedParents } from '@/lib/family';
 import { addressFor } from '@/lib/kinship';
 import ShrinesView from './ShrinesView';
 import MemorialView from './MemorialView';
@@ -46,6 +46,7 @@ export default function FamilyApp() {
   const [contentEditing, setContentEditing] = useState<ContentFormState | null>(null);
   const [newsEditing, setNewsEditing] = useState<Partial<ContentRecord> | null>(null);
   const [focusTreeId, setFocusTreeId] = useState<string | null>(null);
+  const [familyOfId, setFamilyOfId] = useState<string | null>(null);
   const members = data?.members || [];
   const selected = members.find(m => m.id === selectedId) || null;
   const generations = useMemo(() => members.length ? Math.max(...members.map(m => generationOf(m.id, members))) : 0, [members]);
@@ -60,6 +61,16 @@ export default function FamilyApp() {
   useEffect(() => { if (!toast) return; const t = setTimeout(() => setToast(''), 4000); return () => clearTimeout(t); }, [toast]);
   const go = (next: View) => { setView(next); window.location.hash = next; setMobileOpen(false); window.scrollTo({ top: 0, behavior: 'smooth' }); };
   const openPerson = (id: string) => { setSelectedId(id); };
+  const focusOnPerson = (id: string | null) => { setFamilyOfId(null); setFocusTreeId(id); };
+  const showParentsOf = (personId: string) => {
+    const person = members.find(member => member.id === personId);
+    const parentId = [person?.fatherId, person?.motherId].find(id => id && members.some(member => member.id === id));
+    if (!parentId) return;
+    setFamilyOfId(personId);
+    setFocusTreeId(parentId);
+    setSelectedId(null);
+    if (view !== 'tree') go('tree');
+  };
   const beginAdd = () => { if (authenticated) setEditing({ ...emptyForm }); else setLoginOpen(true); };
   const logout = async () => { await fetch('/api/auth', { method: 'DELETE' }); setAuthenticated(false); setToast('Đã đăng xuất quản trị.'); };
   const save = async (form: FormState, avatarFile: File | null) => {
@@ -223,7 +234,7 @@ export default function FamilyApp() {
     <main>
       {loading && <div className="loading container">Đang tải gia phả...</div>}
       {serverError && <div className="error-box container">{serverError}</div>}
-      {!loading && !serverError && view === 'tree' && <TreeView members={members} openPerson={openPerson} addMember={beginAdd} focusTreeId={focusTreeId} onFocusTreeId={setFocusTreeId} />}
+      {!loading && !serverError && view === 'tree' && <TreeView members={members} openPerson={openPerson} addMember={beginAdd} focusTreeId={focusTreeId} onFocusTreeId={focusOnPerson} familyOfId={familyOfId} showParentsOf={showParentsOf} />}
       {!loading && !serverError && view === 'members' && <MembersView members={members} openPerson={openPerson} addMember={beginAdd} exportData={exportData} />}
       {!loading && !serverError && data && view === 'shrines' && <ShrinesView data={data} authenticated={authenticated} onData={setData} onLogin={() => setLoginOpen(true)} onToast={setToast} />}
       {!loading && !serverError && data && view === 'memorial' && <MemorialView data={data} authenticated={authenticated} onData={setData} onLogin={() => setLoginOpen(true)} onToast={setToast} openPerson={openPerson} />}
@@ -241,7 +252,7 @@ export default function FamilyApp() {
     </main>
 
     <footer className="footer"><div className="container footer-grid"><div><div className="footer-brand"><span className="brand-seal">Tổ</span><strong>Gia phả Huỳnh Tấn</strong></div><p>Gìn giữ cội nguồn, kết nối hôm nay<br />và trao truyền cho mai sau.</p></div><div><h3>Khám phá</h3><button onClick={() => go('tree')}>Cây gia phả</button><button onClick={() => go('members')}>Thành viên</button><button onClick={() => go('shrines')}>Nhà thờ</button><button onClick={() => go('memorial')}>Ngày giỗ</button></div><div><h3>Kết nối</h3><button onClick={() => go('documents')}>Tư liệu</button><button onClick={() => go('news')}>Tin tức · Hoạt động</button><button onClick={() => go('contact')}>Liên hệ</button></div><div className="footer-mark">福</div></div><div className="container footer-bottom">© {new Date().getFullYear()} Gia phả Huỳnh Tấn · Gìn giữ truyền thống gia đình</div></footer>
-    {selected && <MemberProfile person={selected} members={members} authenticated={authenticated} close={() => setSelectedId(null)} openPerson={openPerson} edit={() => { setSelectedId(null); setEditing({ ...selected }); }} remove={() => remove(selected)} goTree={() => { const id = selected.id; setSelectedId(null); setFocusTreeId(id); go('tree'); }} />}
+    {selected && <MemberProfile person={selected} members={members} authenticated={authenticated} close={() => setSelectedId(null)} openPerson={openPerson} edit={() => { setSelectedId(null); setEditing({ ...selected }); }} remove={() => remove(selected)} goTree={() => { const id = selected.id; setSelectedId(null); focusOnPerson(id); go('tree'); }} goParents={() => showParentsOf(selected.id)} />}
     {editing && <MemberEditor initial={editing} members={members} close={() => setEditing(null)} save={save} />}
     {contentEditing && <ContentForm initial={contentEditing} close={() => setContentEditing(null)} save={saveContent} />}
     {newsEditing && (
@@ -428,6 +439,9 @@ function VerticalTreeNode({
   openPerson,
   expandedIds,
   toggleExpand,
+  shownChildren,
+  shownSpouses,
+  showParentsOf,
   visited,
   maxGen,
 }: {
@@ -436,17 +450,20 @@ function VerticalTreeNode({
   openPerson: (id: string) => void;
   expandedIds: Set<string>;
   toggleExpand: (id: string) => void;
+  shownChildren: (person: Member) => Member[];
+  shownSpouses: (person: Member) => Member[];
+  showParentsOf: (id: string) => void;
   visited: Set<string>;
   maxGen: number;
 }): React.ReactNode {
   if (visited.has(person.id) || generationOf(person.id, members) > maxGen) return null;
   const next = new Set(visited).add(person.id);
-  const spouse = person.spouseIds.map(id => members.find(m => m.id === id)).filter((x): x is Member => !!x);
+  const spouse = shownSpouses(person);
   spouse.forEach(s => next.add(s.id));
-  const children = childrenOf(person.id, members);
-  const uniqueChildren = children.filter((m, i) => children.findIndex(c => c.id === m.id) === i);
+  const uniqueChildren = shownChildren(person);
   const isExpanded = expandedIds.has(person.id);
   const canExpand = uniqueChildren.length > 0 && generationOf(person.id, members) < maxGen;
+  const hasParent = [person.fatherId, person.motherId].some(id => id && members.some(member => member.id === id));
   const gen = generationOf(person.id, members);
   const ordinalLabel = person.birthOrder && ORDINAL_NAMES[person.birthOrder] ? `Thứ ${ORDINAL_NAMES[person.birthOrder]}` : person.birthOrder ? `Thứ ${person.birthOrder}` : null;
 
@@ -501,6 +518,10 @@ function VerticalTreeNode({
         )}
       </div>
 
+      {hasParent && <button type="button" className="vtree-action-btn" style={{ marginTop: 6, marginLeft: 48 }} onClick={() => showParentsOf(person.id)}>
+        <ChevronUp size={13} /> Xem cha mẹ &amp; anh chị em
+      </button>}
+
       {canExpand && isExpanded && (
         <div className="vtree-children-list">
           {uniqueChildren.map(child => (
@@ -511,6 +532,9 @@ function VerticalTreeNode({
               openPerson={openPerson}
               expandedIds={expandedIds}
               toggleExpand={toggleExpand}
+              shownChildren={shownChildren}
+              shownSpouses={shownSpouses}
+              showParentsOf={showParentsOf}
               visited={next}
               maxGen={maxGen}
             />
@@ -526,13 +550,17 @@ function TreeView({
   openPerson,
   addMember,
   focusTreeId,
-  onFocusTreeId
+  onFocusTreeId,
+  familyOfId,
+  showParentsOf
 }: {
   members: Member[];
   openPerson: (id: string) => void;
   addMember: () => void;
   focusTreeId: string | null;
   onFocusTreeId: (id: string | null) => void;
+  familyOfId: string | null;
+  showParentsOf: (id: string) => void;
 }) {
   const [zoom, setZoom] = useState(1);
   const [maxGen, setMaxGen] = useState(99);
@@ -571,6 +599,7 @@ function TreeView({
 
   // Drag to pan state
   const scrollRef = useRef<HTMLDivElement>(null);
+  const focusBannerRef = useRef<HTMLDivElement>(null);
   const [isPanning, setIsPanning] = useState(false);
   const panStartRef = useRef({ x: 0, y: 0, scrollLeft: 0, scrollTop: 0 });
   const hasDraggedRef = useRef(false);
@@ -623,6 +652,21 @@ function TreeView({
 
   // If focusTreeId is active, show only that person and their descendants downwards
   const focusPerson = focusTreeId ? members.find(m => m.id === focusTreeId) : null;
+  const familyOf = familyOfId ? members.find(m => m.id === familyOfId) : null;
+  const familyParentId = familyOf && [familyOf.fatherId, familyOf.motherId].find(id => id && members.some(m => m.id === id));
+  const familyMode = !!familyOf && !!focusPerson && familyParentId === focusPerson.id;
+  const shownChildren = (person: Member): Member[] => {
+    const children = childrenOf(person.id, members);
+    if (!familyMode || !familyOf || person.id !== focusTreeId) return children;
+    return [familyOf, ...siblingsOfRecordedParents(familyOf, members)].sort(bySeniority);
+  };
+  const shownSpouses = (person: Member): Member[] => {
+    const spouses = person.spouseIds.map(id => members.find(m => m.id === id)).filter((m): m is Member => !!m);
+    if (!familyMode || !familyOf) return spouses;
+    if (person.id !== focusTreeId) return [];
+    const otherParentId = familyOf.fatherId === person.id ? familyOf.motherId : familyOf.fatherId;
+    return spouses.filter(spouse => spouse.id === otherParentId);
+  };
 
   // Autocomplete matching members by name
   const matchingMembers = useMemo(() => {
@@ -681,6 +725,21 @@ function TreeView({
       setExpandedIds(prev => new Set([...prev, focusTreeId]));
     }
   }, [focusTreeId]);
+  useEffect(() => {
+    if (familyOfId && focusTreeId) {
+      setMaxGen(99);
+      setExpandedIds(new Set([focusTreeId]));
+    }
+  }, [familyOfId, focusTreeId]);
+  useEffect(() => {
+    if (!familyMode) return;
+    const frame = requestAnimationFrame(() => {
+      const canvas = scrollRef.current;
+      if (canvas) canvas.scrollTo({ left: (canvas.scrollWidth - canvas.clientWidth) / 2, top: 0 });
+      focusBannerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [familyMode, familyOfId, focusTreeId, viewMode]);
 
   const scrollToRoot = () => {
     setZoom(1);
@@ -697,11 +756,11 @@ function TreeView({
   const renderNode = (person: Member, visited: Set<string>): React.ReactNode => {
     if (visited.has(person.id) || generationOf(person.id, members) > maxGen) return null;
     const next = new Set(visited).add(person.id);
-    const spouse = person.spouseIds.map(id => members.find(m => m.id === id)).filter((x): x is Member => !!x);
+    const spouse = shownSpouses(person);
     spouse.forEach(s => next.add(s.id));
-    const children = childrenOf(person.id, members);
-    const uniqueChildren = [...new Map(children.map(child => [child.id, child])).values()];
+    const uniqueChildren = [...new Map(shownChildren(person).map(child => [child.id, child])).values()];
     const canExpand = uniqueChildren.length > 0 && generationOf(person.id, members) < maxGen;
+    const hasParent = [person.fatherId, person.motherId].some(id => id && members.some(member => member.id === id));
 
     return (
       <div className="tree-node" key={person.id}>
@@ -732,6 +791,9 @@ function TreeView({
             </button>
           ))}
         </div>
+        {hasParent && <button type="button" className="vtree-action-btn" style={{ marginTop: 10 }} onClick={() => showParentsOf(person.id)}>
+          <ChevronUp size={13} /> Xem cha mẹ &amp; anh chị em
+        </button>}
         {canExpand && <button type="button" className="vtree-action-btn" style={{ marginTop: 10 }} onClick={() => toggleExpand(person.id)} aria-expanded={expandedIds.has(person.id)}>
           {expandedIds.has(person.id) ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
           {expandedIds.has(person.id) ? 'Thu gọn' : `Xem ${uniqueChildren.length} người con`}
@@ -966,12 +1028,18 @@ function TreeView({
         </div>
 
         {focusPerson && (
-          <div className="tree-focus-banner">
+          <div className="tree-focus-banner" ref={focusBannerRef} style={{ scrollMarginTop: 84 }}>
             <div className="focus-info">
               <Sprout size={18} />
               <span>
-                Đang xem cây từ: <strong>{focusPerson.fullName}</strong> (Đời thứ {generationOf(focusPerson.id, members)})
-                {' · '}Có <strong>{descendantsOf(focusPerson.id, members).length}</strong> hậu duệ trực hệ đổ xuống
+                {familyMode && familyOf ? <>
+                  Đời trước của <strong>{familyOf.fullName}</strong>: <strong>{focusPerson.fullName}</strong>
+                  {shownSpouses(focusPerson).map(parent => ` và ${parent.fullName}`).join('')} (Đời thứ {generationOf(focusPerson.id, members)})
+                  {' · '}<strong>{Math.max(0, shownChildren(focusPerson).length - 1)}</strong> {familyOf.fatherId && familyOf.motherId ? 'anh chị em ruột' : 'người cùng cha/mẹ đã ghi (chưa đủ dữ liệu xác nhận ruột)'}
+                </> : <>
+                  Đang xem cây từ: <strong>{focusPerson.fullName}</strong> (Đời thứ {generationOf(focusPerson.id, members)})
+                  {' · '}Có <strong>{descendantsOf(focusPerson.id, members).length}</strong> hậu duệ trực hệ đổ xuống
+                </>}
               </span>
             </div>
             <button
@@ -1007,6 +1075,9 @@ function TreeView({
                     openPerson={openPerson}
                     expandedIds={expandedIds}
                     toggleExpand={toggleExpand}
+                    shownChildren={shownChildren}
+                    shownSpouses={shownSpouses}
+                    showParentsOf={showParentsOf}
                     visited={new Set()}
                     maxGen={maxGen}
                   />
