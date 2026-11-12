@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { BookOpen, Landmark, MapPin, Search, ScrollText, Sprout } from 'lucide-react';
+import { ArrowRight, BookOpen, Compass, Landmark, MapPin, Search, ScrollText, Sprout } from 'lucide-react';
 import { normalizeSearch } from '@/lib/family';
 import tieuThuEntries from '@/data/tieu-thu-2023.json';
 import styles from './HeritageArchive.module.css';
@@ -44,7 +44,7 @@ const memorialPoem = [
   'Xin nguyện trọn đạo hiếu trung đời đời.'
 ];
 
-export default function HeritageArchive() {
+export default function HeritageArchive({ onOpenOrigin }: { onOpenOrigin?: () => void }) {
   const [ritualQuery, setRitualQuery] = useState('');
   const ritualMatches = useMemo(() => {
     const query = normalizeSearch(ritualQuery);
@@ -57,6 +57,13 @@ export default function HeritageArchive() {
       <span className="section-kicker">TỪ BẢN GIA PHỔ</span>
       <h2 id="heritage-title">Lịch sử, gia phong và tư liệu tế tự</h2>
       <p>Nội dung được trích lược từ tệp “Tân Gia phả chung 2023-08-31 09.32.43.docx”. Tệp này lưu lời tựa năm 1874, bản biên soạn năm 1993 và phần phả hệ. Các địa danh và câu chuyện dưới đây được trình bày theo lời bản gia phổ.</p>
+      {onOpenOrigin && (
+        <div style={{ marginTop: 14 }}>
+          <button type="button" className="primary-btn" onClick={onOpenOrigin}>
+            <Compass size={16} /> Xem câu chuyện cội nguồn chuyển động <ArrowRight size={15} />
+          </button>
+        </div>
+      )}
     </div>
 
     <nav className={styles.contents} aria-label="Mục lục tư liệu">

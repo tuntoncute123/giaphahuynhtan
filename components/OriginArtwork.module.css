@@ -1,0 +1,107 @@
+.artwork {
+  width: 100%;
+  color: #234d3c;
+  font-family: 'Baloo 2', sans-serif;
+  font-size: 14px;
+  line-height: 1.4;
+}
+.landscape { margin: 0; }
+.scene { overflow: hidden; border-radius: 12px; border: 1px solid #d6c9a9; }
+.scene > svg { display: block; width: 100%; height: auto; }
+.landscape figcaption { padding: 15px 4px 5px; }
+.placePair { display: grid; grid-template-columns: 1.2fr 20px 1fr; gap: 8px; align-items: center; text-align: center; }
+.placePair strong, .placePair small { display: block; }
+.placePair strong { font-size: 14px; line-height: 1.3; }
+.placePair small { color: #74664d; font-size: 12px; margin-top: 4px; }
+.sceneCaption { display: grid; text-align: center; gap: 3px; }
+.sceneCaption strong { font-size: 18px; }
+.sceneCaption span { color: #70644e; font-size: 13px; }
+.provenance { margin: 12px 0 0; font-size: 11px; color: #766b56; text-align: center; line-height: 1.5; }
+.voyageLegend { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); text-align: center; }
+.voyageLegend > div + div { border-left: 1px solid #daceb1; }
+.voyageLegend strong { font-size: 24px; line-height: 1; display: block; font-weight: 600; margin-bottom: 7px; }
+.voyageLegend > div:last-child strong { color: #9a4d37; }
+.voyageLegend span { font-size: 12px; display: block; }
+.settlementLabels { display: flex; justify-content: center; align-items: center; gap: 12px; }
+.settlementLabels strong { font-size: 14px; }
+.settlementLabels svg { flex-shrink: 0; color: #987b48; }
+.diagram { padding: 25px 4px 10px; }
+.treeRoot { width: 148px; margin: 0 auto; padding: 17px 12px; border: 1px solid #496c50; border-radius: 12px; display: grid; justify-items: center; gap: 5px; background: #2c5643; color: #fff4d6; position: relative; }
+.treeRoot strong { font-size: 20px; }
+.treeRoot span { font-size: 12px; color: #e0d6b7; }
+.treeRoot::after { content: ''; position: absolute; width: 1px; height: 27px; background: #b39558; left: 50%; bottom: -28px; }
+.treeChildren { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; padding-top: 53px; }
+.treeNode { position: relative; padding: 17px 6px 13px; border: 1px solid #b6c0a1; background: #f7f8ec; border-radius: 9px; text-align: center; display: flex; align-items: center; flex-direction: column; gap: 5px; }
+.treeNode::before { content: ''; position: absolute; left: 50%; width: 1px; height: 27px; background: #b39558; top: -28px; }
+.treeNode::after { content: ''; position: absolute; left: calc(-50% - 10px); right: 50%; height: 1px; background: #b39558; top: -28px; }
+.treeNode:first-child::after { display: none; }
+.treeNode strong { font-size: 14px; }
+.treeNode > span:last-child { font-size: 12px; color: #6f6752; line-height: 1.4; }
+.nodeDot { position: absolute; width: 7px; height: 7px; border-radius: 50%; background: #b39558; left: calc(50% - 3px); top: -4px; }
+.uncertain { border-style: dashed; background: #f6efdf; }
+.uncertain strong { color: #87633e; }
+.diagramNote { border-top: 1px solid #dfd3b8; padding-top: 13px; margin: 22px 3px 0; font-size: 12px; color: #70644e; text-align: center; line-height: 1.6; }
+.migration { list-style: none; margin: 0; padding: 0; display: grid; gap: 20px; }
+.migration li { display: flex; align-items: flex-start; gap: 12px; position: relative; }
+.migration li:first-child::after { content: ''; width: 1px; background: #b39558; position: absolute; top: 36px; bottom: -20px; left: 17px; }
+.routeNumber { width: 35px; height: 35px; border-radius: 50%; display: grid; place-items: center; flex-shrink: 0; border: 1px solid #a38b56; color: #f9edcf; background: #315e4c; font-size: 13px; }
+.migration strong { font-size: 16px; }
+.migration strong small { font-size: 12px; font-weight: 400; color: #76634d; }
+.migration p { margin: 4px 0 0; font-size: 13px; color: #6e624b; display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+.migration p svg { flex-shrink: 0; }
+.groupLabel { font-size: 11px; letter-spacing: 1.1px; color: #847044; margin: 24px 0 10px; font-weight: 700; }
+.affiliations { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+.affiliations > button, .affiliations > div { font: inherit; text-align: left; display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid #c6c9ac; border-radius: 9px; background: #fbf8ec; color: #31543f; min-width: 0; }
+.affiliations > button { cursor: pointer; }
+.affiliations > button:hover { background: #eef0dd; }
+.affiliations > button:focus-visible { outline: 2px solid #315e4c; outline-offset: 3px; }
+.affiliations > button[aria-pressed='true'] { background: #315e4c; color: #fff4d6; border-color: #315e4c; }
+.affiliations svg { flex-shrink: 0; }
+.affiliations strong, .affiliations small { display: block; }
+.affiliations strong { font-size: 15px; }
+.affiliations small { font-size: 11px; line-height: 1.4; }
+.comparison { display: grid; grid-template-columns: 1fr 80px 1fr; align-items: center; text-align: center; }
+.comparison > div { display: grid; justify-items: center; }
+.comparison svg { width: 90px; height: 100px; }
+.comparison strong { font-size: 17px; }
+.comparisonMark { font-size: 12px; padding: 7px 0; border-top: 1px dashed #b69a62; border-bottom: 1px dashed #b69a62; color: #8a6a3c; }
+.metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 25px; text-align: center; }
+.metrics > div { background: #f9f4e6; border: 1px solid #d9cbb0; border-radius: 10px; padding: 13px 8px; }
+.metrics strong, .metrics span { display: block; }
+.metrics strong { font-size: 31px; line-height: 1.2; font-weight: 600; }
+.metrics span { font-size: 12px; color: #71634b; margin-top: 5px; }
+.chronicles { list-style: none; padding: 0; margin: 0; display: grid; gap: 16px; }
+.chronicles li { display: flex; align-items: center; gap: 15px; }
+.chronicles svg { width: 70px; height: 74px; flex-shrink: 0; }
+.chronicles li > div { display: grid; gap: 2px; }
+.chronicles li > div > span { color: #9b5135; font-size: 22px; line-height: 1.2; font-weight: 600; }
+.chronicles strong { font-size: 15px; }
+.chronicles small { font-size: 12px; color: #73654f; }
+.digitalHeader { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; font-size: 12px; }
+.digitalHeader svg { color: #927843; }
+.digitalTree { width: 100%; height: auto; display: block; }
+@media (min-width: 961px) and (max-height: 850px) {
+  .scene { max-width: 360px; margin-inline: auto; }
+  .landscape figcaption { padding-top: 11px; }
+  .diagram { padding-top: 12px; padding-bottom: 4px; }
+  .diagramNote { margin-top: 14px; padding-top: 9px; }
+  .digitalTree { max-height: 145px; }
+  .digitalHeader { margin-bottom: 10px; }
+  .metrics { margin-top: 14px; }
+  .metrics > div { padding: 10px 8px; }
+  .metrics strong { font-size: 27px; }
+  .chronicles { gap: 10px; }
+}
+@media (max-width: 380px) {
+  .placePair strong, .settlementLabels strong { font-size: 12px; }
+  .settlementLabels { gap: 7px; }
+  .diagram { padding: 18px 0 8px; }
+  .treeChildren { gap: 6px; }
+  .treeNode { padding-inline: 3px; }
+  .treeNode strong { font-size: 12px; }
+  .treeNode > span:last-child { font-size: 11px; }
+  .treeNode::after { left: calc(-50% - 7px); }
+  .migration strong { font-size: 14px; }
+  .migration p { font-size: 12px; }
+  .affiliations > button, .affiliations > div { padding: 9px 8px; gap: 6px; }
+}

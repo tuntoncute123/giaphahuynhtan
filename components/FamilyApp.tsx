@@ -13,17 +13,18 @@ import MemberProfile from './MemberProfile';
 import NewsView, { NewsPostModal, CATEGORY_INFO, displayNewsDate } from './NewsView';
 
 const HeritageArchive = dynamic(() => import('./HeritageArchive'));
+const OriginStory = dynamic(() => import('./OriginStory'), { ssr: false });
 
-type View = 'home' | 'tree' | 'members' | 'shrines' | 'memorial' | 'documents' | 'news' | 'contact';
+type View = 'home' | 'origin' | 'tree' | 'members' | 'shrines' | 'memorial' | 'documents' | 'news' | 'contact';
 type FormState = Omit<Member, 'id' | 'createdAt'> & { id?: string };
 type ContentFormState = Omit<ContentRecord, 'id' | 'createdAt'> & { id?: string };
 const emptyForm: FormState = { fullName: '', aliases: [], birthOrder: null, gender: 'Nam', birthDate: '', deathDate: '', anniversary: null, birthPlace: '', currentPlace: '', home: { address: '', latitude: null, longitude: null }, homePublic: false, zaloPhone: '', zaloConsent: false, occupation: '', biography: '', fatherId: null, motherId: null, spouseIds: [], avatar: '' };
 const nav: { id: View; label: string }[] = [
-  { id: 'home', label: 'Trang chủ' }, { id: 'tree', label: 'Gia phả' }, { id: 'members', label: 'Thành viên' },
+  { id: 'home', label: 'Trang chủ' }, { id: 'origin', label: 'Cội nguồn' }, { id: 'tree', label: 'Gia phả' }, { id: 'members', label: 'Thành viên' },
   { id: 'shrines', label: 'Nhà thờ' }, { id: 'memorial', label: 'Ngày giỗ' }, { id: 'news', label: 'Tin tức · Hoạt động' },
   { id: 'contact', label: 'Liên hệ' }
 ];
-const pageTitle: Record<View, string> = { home: 'Trang chủ', tree: 'Cây gia phả', members: 'Thành viên dòng họ', shrines: 'Nhà thờ dòng họ', memorial: 'Ngày giỗ âm lịch', documents: 'Tư liệu dòng họ', news: 'Tin tức & Hoạt động dòng họ', contact: 'Liên hệ' };
+const pageTitle: Record<View, string> = { home: 'Trang chủ', origin: 'Cội nguồn dòng họ', tree: 'Cây gia phả', members: 'Thành viên dòng họ', shrines: 'Nhà thờ dòng họ', memorial: 'Ngày giỗ âm lịch', documents: 'Tư liệu dòng họ', news: 'Tin tức & Hoạt động dòng họ', contact: 'Liên hệ' };
 
 function initials(name: string) { return name.split(' ').slice(-2).map(x => x[0]).join('').toUpperCase(); }
 function Avatar({ person, size = 'normal' }: { person: Member; size?: 'normal' | 'large' | 'small' }) {
@@ -157,7 +158,7 @@ export default function FamilyApp() {
       </section>
       <section className="intro-section container">
         <div className="intro-art"><div className="round-art"><TreePine size={92} strokeWidth={1.2} /><span>Phúc đức lưu truyền</span></div><span className="flower flower-one">✿</span><span className="flower flower-two">✿</span></div>
-        <div className="intro-copy"><span className="section-kicker">CỘI NGUỒN VÀ KẾT NỐI</span><h2>Mỗi nhánh cây là một câu chuyện</h2><Ornament /><p>Gia phả giúp chúng ta biết mình đến từ đâu, hiểu mối dây gắn bó giữa các thế hệ và gìn giữ những câu chuyện quý giá cho mai sau.</p><p>Hãy bắt đầu từ một cái tên, khám phá những người thân trong dòng họ và cùng bổ sung thông tin để cây gia đình ngày càng trọn vẹn.</p><div style={{ display: 'flex', gap: 22, flexWrap: 'wrap' }}><button className="text-link" onClick={() => go('members')}>Gặp gỡ các thành viên <ArrowRight size={18} /></button><button className="text-link" onClick={() => go('documents')}>Đọc lịch sử &amp; tư liệu <ArrowRight size={18} /></button></div></div>
+        <div className="intro-copy"><span className="section-kicker">CỘI NGUỒN VÀ KẾT NỐI</span><h2>Mỗi nhánh cây là một câu chuyện</h2><Ornament /><p>Gia phả giúp chúng ta biết mình đến từ đâu, hiểu mối dây gắn bó giữa các thế hệ và gìn giữ những câu chuyện quý giá cho mai sau.</p><p>Hãy bắt đầu từ một cái tên, khám phá những người thân trong dòng họ và cùng bổ sung thông tin để cây gia đình ngày càng trọn vẹn.</p><div style={{ display: 'flex', gap: 22, flexWrap: 'wrap' }}><button className="text-link" onClick={() => go('origin')}>Xem bản đồ cội nguồn <ArrowRight size={18} /></button><button className="text-link" onClick={() => go('members')}>Gặp gỡ các thành viên <ArrowRight size={18} /></button><button className="text-link" onClick={() => go('documents')}>Đọc lịch sử &amp; tư liệu <ArrowRight size={18} /></button></div></div>
       </section>
       <section className="home-news-section">
         <div className="container">
@@ -232,16 +233,29 @@ export default function FamilyApp() {
       <section className="home-numbers"><div className="container"><div className="section-center"><span className="section-kicker">GIA PHẢ SỐ</span><h2>Gìn giữ ký ức qua từng thế hệ</h2><Ornament /></div><div className="number-grid"><div><strong>{members.length}</strong><span>Thành viên trong cây</span></div><div><strong>{generations}</strong><span>Thế hệ trong cây</span></div><div><strong>{members.filter(m => !m.fatherId && !m.motherId).length}</strong><span>Nhánh khởi đầu</span></div></div><p className="demo-note">Thông tin phả hệ được đối chiếu từ bản Tân Gia phả chung và tiếp tục cập nhật theo xác nhận của gia đình.</p></div></section>
     </>}
 
-    {view !== 'home' && <section className="page-banner"><div className="container"><span className="breadcrumb" onClick={() => go('home')}>Trang chủ <ChevronRight size={14} /> {pageTitle[view]}</span><h1>{pageTitle[view]}</h1><Ornament /><p>{view === 'tree' ? 'Theo dấu cội nguồn, khám phá mối liên kết giữa các thế hệ.' : view === 'members' ? 'Mỗi thành viên là một phần không thể thiếu của câu chuyện dòng họ.' : view === 'documents' ? 'Đọc lại lịch sử, gia phong và các tư liệu tế tự được ghi trong gia phổ.' : 'Cùng gìn giữ những giá trị và kỷ niệm của dòng họ.'}</p></div></section>}
+    {view !== 'home' && view !== 'origin' && <section className="page-banner"><div className="container"><span className="breadcrumb" onClick={() => go('home')}>Trang chủ <ChevronRight size={14} /> {pageTitle[view]}</span><h1>{pageTitle[view]}</h1><Ornament /><p>{view === 'tree' ? 'Theo dấu cội nguồn, khám phá mối liên kết giữa các thế hệ.' : view === 'members' ? 'Mỗi thành viên là một phần không thể thiếu của câu chuyện dòng họ.' : view === 'documents' ? 'Đọc lại lịch sử, gia phong và các tư liệu tế tự được ghi trong gia phổ.' : 'Cùng gìn giữ những giá trị và kỷ niệm của dòng họ.'}</p></div></section>}
 
     <main>
-      {loading && <div className="loading container">Đang tải gia phả...</div>}
-      {serverError && <div className="error-box container">{serverError}</div>}
+      {view === 'origin' && (
+        <OriginStory
+          members={members}
+          onGoTree={() => { focusOnPerson(null); go('tree'); }}
+          onFocusMember={id => {
+            const exists = members.some(m => m.id === id);
+            focusOnPerson(exists ? id : null);
+            go('tree');
+          }}
+          onGoShrines={() => go('shrines')}
+          onGoDocuments={() => go('documents')}
+        />
+      )}
+      {view !== 'origin' && loading && <div className="loading container">Đang tải gia phả...</div>}
+      {view !== 'origin' && serverError && <div className="error-box container">{serverError}</div>}
       {!loading && !serverError && view === 'tree' && <TreeView members={members} openPerson={openPerson} addMember={beginAdd} focusTreeId={focusTreeId} onFocusTreeId={focusOnPerson} familyOfId={familyOfId} showParentsOf={showParentsOf} />}
       {!loading && !serverError && view === 'members' && <MembersView members={members} openPerson={openPerson} addMember={beginAdd} exportData={exportData} />}
       {!loading && !serverError && data && view === 'shrines' && <ShrinesView data={data} authenticated={authenticated} onData={setData} onLogin={() => setLoginOpen(true)} onToast={setToast} />}
       {!loading && !serverError && data && view === 'memorial' && <MemorialView data={data} authenticated={authenticated} onData={setData} onLogin={() => setLoginOpen(true)} onToast={setToast} openPerson={openPerson} />}
-      {view === 'documents' && <><HeritageArchive /><ContentView kind="document" records={data?.content || []} authenticated={authenticated} add={() => authenticated ? setContentEditing({ kind: 'document', title: '', description: '', date: '', location: '', fileUrl: '' }) : setLoginOpen(true)} edit={record => setContentEditing({ ...record })} remove={removeContent} /></>}
+      {view === 'documents' && <><HeritageArchive onOpenOrigin={() => go('origin')} /><ContentView kind="document" records={data?.content || []} authenticated={authenticated} add={() => authenticated ? setContentEditing({ kind: 'document', title: '', description: '', date: '', location: '', fileUrl: '' }) : setLoginOpen(true)} edit={record => setContentEditing({ ...record })} remove={removeContent} /></>}
       {view === 'news' && (
         <NewsView
           records={data?.content || []}
@@ -254,7 +268,7 @@ export default function FamilyApp() {
       {view === 'contact' && <ContactView />}
     </main>
 
-    <footer className="footer"><div className="container footer-grid"><div><div className="footer-brand"><span className="brand-seal">Tổ</span><strong>Gia phả Huỳnh Tấn</strong></div><p>Gìn giữ cội nguồn, kết nối hôm nay<br />và trao truyền cho mai sau.</p></div><div><h3>Khám phá</h3><button onClick={() => go('tree')}>Cây gia phả</button><button onClick={() => go('members')}>Thành viên</button><button onClick={() => go('shrines')}>Nhà thờ</button><button onClick={() => go('memorial')}>Ngày giỗ</button></div><div><h3>Kết nối</h3><button onClick={() => go('documents')}>Tư liệu</button><button onClick={() => go('news')}>Tin tức · Hoạt động</button><button onClick={() => go('contact')}>Liên hệ</button></div><div className="footer-mark">福</div></div><div className="container footer-bottom">© {new Date().getFullYear()} Gia phả Huỳnh Tấn · Gìn giữ truyền thống gia đình</div></footer>
+    <footer className="footer"><div className="container footer-grid"><div><div className="footer-brand"><span className="brand-seal">Tổ</span><strong>Gia phả Huỳnh Tấn</strong></div><p>Gìn giữ cội nguồn, kết nối hôm nay<br />và trao truyền cho mai sau.</p></div><div><h3>Khám phá</h3><button onClick={() => go('origin')}>Cội nguồn</button><button onClick={() => go('tree')}>Cây gia phả</button><button onClick={() => go('members')}>Thành viên</button><button onClick={() => go('shrines')}>Nhà thờ</button><button onClick={() => go('memorial')}>Ngày giỗ</button></div><div><h3>Kết nối</h3><button onClick={() => go('documents')}>Tư liệu</button><button onClick={() => go('news')}>Tin tức · Hoạt động</button><button onClick={() => go('contact')}>Liên hệ</button></div><div className="footer-mark">福</div></div><div className="container footer-bottom">© {new Date().getFullYear()} Gia phả Huỳnh Tấn · Gìn giữ truyền thống gia đình</div></footer>
     {selected && <MemberProfile person={selected} members={members} authenticated={authenticated} close={() => setSelectedId(null)} openPerson={openPerson} edit={() => { setSelectedId(null); setEditing({ ...selected }); }} remove={() => remove(selected)} goTree={() => { const id = selected.id; setSelectedId(null); focusOnPerson(id); go('tree'); }} goParents={() => showParentsOf(selected.id)} />}
     {editing && <MemberEditor initial={editing} members={members} close={() => setEditing(null)} save={save} />}
     {contentEditing && <ContentForm initial={contentEditing} close={() => setContentEditing(null)} save={saveContent} />}

@@ -16,5 +16,5 @@ export const metadata: Metadata = {
 export const viewport: Viewport = { themeColor: '#173b2a' };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="vi"><body><Script id="capture-pwa-install" strategy="beforeInteractive">{"window.addEventListener('beforeinstallprompt', function(event) { event.preventDefault(); window.__familyPwaInstallPrompt = event; window.dispatchEvent(new Event('family-pwa-install-ready')); });"}</Script>{children}<PwaInstallPrompt /></body></html>;
+  return <html lang="vi"><body suppressHydrationWarning><Script id="capture-pwa-install" strategy="beforeInteractive">{"window.addEventListener('beforeinstallprompt', function(event) { event.preventDefault(); window.__familyPwaInstallPrompt = event; window.dispatchEvent(new Event('family-pwa-install-ready')); });"}</Script>{children}<PwaInstallPrompt /></body></html>;
 }
