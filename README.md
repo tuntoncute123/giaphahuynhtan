@@ -71,3 +71,26 @@ Khi chạy trên máy riêng và không đặt `DATABASE_URL`/`BLOB_READ_WRITE_T
 Kiểm tra bằng `npm test`, `npm run typecheck` và `npm run build`.
 
 Dữ liệu từ bản Word được đối chiếu và seed bằng `scripts/seed-tan-gia-pha.ts`; kết quả và các mục cần xác minh nằm trong `docs/tan-gia-pha-2023.md`.
+
+## Không gian dòng họ
+
+Tám tiện ích được tích hợp trong cùng dữ liệu gia phả:
+
+1. **Tôi trong dòng họ**: ở trang Gia phả, chọn hồ sơ của mình. Lựa chọn lưu trên thiết bị, tô sáng tổ tiên ở cả hai phía và mở các nhánh tương ứng. Có đường phả hệ theo cha hoặc theo mẹ; khi mở hồ sơ khác, cách xưng hô tự tính từ người đã chọn. Đây là lựa chọn cá nhân hóa, không xác thực danh tính hay cấp quyền quản trị.
+2. **Album gắn tên**: trong Không gian dòng họ → Album, quản trị tải ảnh hoặc chọn ảnh tin tức, chọn người rồi chạm vị trí trên ảnh. Có cách đặt nhãn bằng bàn phím và chỉnh tọa độ. Người xem chạm tên để mở hồ sơ. Ảnh có thể gắn sự kiện, lọc theo người hoặc sự kiện.
+3. **Ký ức giọng nói**: quản trị ghi âm tối đa 5 phút/đoạn, nghe lại trước khi dùng, hoặc tải WebM/OGG/MP3/M4A/WAV. Có ảnh, bản chép lời, nhân vật và sự kiện liên quan. Người kể phải đồng ý công khai. Micro cần HTTPS hoặc localhost và quyền của trình duyệt. Mỗi tệp tối đa 4 MB; tệp dài cần chia nhỏ. Phát âm thanh hỗ trợ byte-range để tua trên điện thoại.
+4. **Sổ gia phả PDF**: chọn toàn họ hoặc một gốc nhánh; bản nhánh bao gồm hậu duệ và phối ngẫu. Xuất tệp PDF A4 thực, có phông tiếng Việt, bìa, mục lục, sơ đồ phân trang, tiểu sử, căn cứ và số trang. Ảnh đại diện từ kho tệp nội bộ được nhúng; ảnh lỗi/ảnh ngoài được báo rõ. Không xuất điện thoại và địa chỉ nhà riêng. PDF được tạo trên trình duyệt, không gửi dữ liệu sang dịch vụ tạo sách bên ngoài.
+5. **Góp thông tin**: mọi người có thể gửi đề nghị sửa hồ sơ, ảnh hoặc quan hệ kèm tên và căn cứ. Quản trị xem trước–sau rồi duyệt/từ chối. Nếu trường liên quan đã đổi, duyệt bị chặn để tránh ghi đè. Những lần sửa trực tiếp, duyệt và khôi phục được ghi lịch sử từ khi tính năng được bật. Khôi phục chỉ đảo các trường của phiên bản chọn, chặn xung đột mới; hồ sơ đã xóa không được phục hồi bằng luồng này. Góp ý và lịch sử chỉ trả về cho quản trị.
+6. **Giỗ & họp họ**: dùng sự kiện đã tạo trong Tin tức · Hoạt động. Khách đăng ký tên, số người đi cùng, ghi chú riêng cho ban tổ chức; sửa/hủy trên trình duyệt đăng ký. Cookie ngẫu nhiên HttpOnly giữ quyền đối với đăng ký, không dựa vào hồ sơ “Tôi”. Xóa cookie hoặc đổi thiết bị sẽ mất quyền sửa đăng ký cũ. Danh sách công khai tên và số người; tổng mâm là ước tính 10 người/mâm. Quản trị phân công và đánh dấu công việc. Album hiển thị cả ảnh tin tức và ảnh được gắn sự kiện.
+7. **Phần mộ**: quản trị lưu người an táng, khu mộ, ảnh bia, địa chỉ/tọa độ, hướng dẫn và lịch sử chăm sóc. Có bản đồ từng phần mộ, lọc khu mộ, chỉ đường và tuyến tảo mộ tối đa 3 điểm theo thứ tự chọn để dùng trên điện thoại. Bản đồ/chỉ đường cần mạng. Chỉ dùng nút lấy vị trí khi đang ở phần mộ.
+8. **Đối chiếu tư liệu**: mỗi căn cứ gắn với một trường hồ sơ, có tên sách, trang/đoạn, trích dẫn, ảnh/PDF/liên kết và trạng thái xác minh. Có đối chiếu hồ sơ–tư liệu cạnh nhau; PDF trang số mở đúng trang. Sửa giá trị hồ sơ sẽ đưa căn cứ của trường đó về “Cần đối chiếu”.
+
+Dữ liệu mới nằm trong `community` của bản ghi `app_state`, hoặc `data/family.json` ở chế độ tệp. Dữ liệu cũ được bổ sung các danh sách rỗng khi đọc; không cần chạy migration hay xóa dữ liệu. API cộng đồng cập nhật qua cùng giao dịch/khóa hiện có. Sao lưu JSON bao gồm các phần mới (bản quản trị có cả lịch sử và đề nghị).
+
+### Kiểm tra tự động
+
+- `npm test`: kiểm tra nghiệp vụ phả hệ, đề nghị/duyệt/khôi phục, quyền truy cập, dữ liệu riêng tư, sự kiện, tư liệu, phần mộ và âm thanh.
+- `npm run typecheck` và `npm run build`.
+- `npx playwright install chromium` (máy Linux cần thư viện Chromium), sau đó `npm run build && npm run test:e2e`: chạy trình duyệt thật với dữ liệu thử trong thư mục tạm, tài khoản thử riêng, không dùng PostgreSQL/Blob hay dữ liệu gia đình thật. Có kiểm tra ghi âm qua micro giả, tải PDF và màn hình điện thoại. Ảnh chụp/PDF/trace nằm trong `test-results/` (được Git bỏ qua).
+
+Biến `FAMILY_DATA_FILE` cho phép chỉ định tệp dữ liệu riêng khi kiểm tra cục bộ; không có tác dụng khi dùng PostgreSQL. Không đặt biến này trỏ vào tệp tạm cho môi trường vận hành. Phông DejaVu Sans dùng cho PDF có giấy phép kèm tại `public/fonts/dejavu/LICENSE.txt`.

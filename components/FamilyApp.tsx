@@ -1,6 +1,10 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import './community/community.css';
+import MyLineage from './community/MyLineage';
+import { ancestorIds } from '@/lib/community/model';
+const CommunityHub = dynamic(() => import('./community/CommunityHub'));
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowRight, BellRing, BookOpen, CalendarDays, Camera, ChevronDown, ChevronRight, ChevronUp, Download, Edit3, Heart, Landmark, Leaf, ListTree, MapPin, Menu, Minus, Move, Network, Phone, Plus, Search, ShieldCheck, Sprout, Trash2, TreePine, UserRound, Users, X } from 'lucide-react';
 import type { ContentRecord, FamilyData, Member } from '@/lib/types';
@@ -15,16 +19,16 @@ import NewsView, { NewsPostModal, CATEGORY_INFO, displayNewsDate } from './NewsV
 const HeritageArchive = dynamic(() => import('./HeritageArchive'));
 const OriginStory = dynamic(() => import('./OriginStory'), { ssr: false });
 
-type View = 'home' | 'origin' | 'tree' | 'members' | 'shrines' | 'memorial' | 'documents' | 'news' | 'contact';
+type View = 'home' | 'origin' | 'tree' | 'members' | 'shrines' | 'memorial' | 'documents' | 'news' | 'contact' | 'community';
 type FormState = Omit<Member, 'id' | 'createdAt'> & { id?: string };
 type ContentFormState = Omit<ContentRecord, 'id' | 'createdAt'> & { id?: string };
 const emptyForm: FormState = { fullName: '', aliases: [], birthOrder: null, gender: 'Nam', birthDate: '', deathDate: '', anniversary: null, birthPlace: '', currentPlace: '', home: { address: '', latitude: null, longitude: null }, homePublic: false, zaloPhone: '', zaloConsent: false, occupation: '', biography: '', fatherId: null, motherId: null, spouseIds: [], avatar: '' };
 const nav: { id: View; label: string }[] = [
   { id: 'home', label: 'Trang chủ' }, { id: 'origin', label: 'Cội nguồn' }, { id: 'tree', label: 'Gia phả' }, { id: 'members', label: 'Thành viên' },
   { id: 'shrines', label: 'Nhà thờ' }, { id: 'memorial', label: 'Ngày giỗ' }, { id: 'news', label: 'Tin tức · Hoạt động' },
-  { id: 'contact', label: 'Liên hệ' }
+  { id: 'community', label: 'Không gian dòng họ' }, { id: 'contact', label: 'Liên hệ' }
 ];
-const pageTitle: Record<View, string> = { home: 'Trang chủ', origin: 'Cội nguồn dòng họ', tree: 'Cây gia phả', members: 'Thành viên dòng họ', shrines: 'Nhà thờ dòng họ', memorial: 'Ngày giỗ âm lịch', documents: 'Tư liệu dòng họ', news: 'Tin tức & Hoạt động dòng họ', contact: 'Liên hệ' };
+const pageTitle: Record<View, string> = { home: 'Trang chủ', origin: 'Cội nguồn dòng họ', tree: 'Cây gia phả', members: 'Thành viên dòng họ', shrines: 'Nhà thờ dòng họ', memorial: 'Ngày giỗ âm lịch', documents: 'Tư liệu dòng họ', news: 'Tin tức & Hoạt động dòng họ', contact: 'Liên hệ', community: 'Không gian dòng họ' };
 
 function initials(name: string) { return name.split(' ').slice(-2).map(x => x[0]).join('').toUpperCase(); }
 function Avatar({ person, size = 'normal' }: { person: Member; size?: 'normal' | 'large' | 'small' }) {
@@ -37,6 +41,9 @@ function Avatar({ person, size = 'normal' }: { person: Member; size?: 'normal' |
 function Ornament() { return <span className="ornament" aria-hidden="true"><span />✦<span /></span>; }
 
 export default function FamilyApp() {
+  const [selfId, setSelfId] = useState('');
+  const [communityMemberId, setCommunityMemberId] = useState('');
+  useEffect(() => { try { setSelfId(localStorage.getItem('huynh-tan-self') || ''); } catch {} }, []);
   const [view, setView] = useState<View>('home');
   const [data, setData] = useState<FamilyData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -56,7 +63,7 @@ export default function FamilyApp() {
   const generations = useMemo(() => members.length ? Math.max(...members.map(m => generationOf(m.id, members))) : 0, [members]);
 
   useEffect(() => {
-    const applyHash = () => { const hash = window.location.hash.slice(1) as View; if (hash in pageTitle) setView(hash); };
+    const applyHash = () => { const hash = window.location.hash.slice(1).split('/')[0] as View; if (hash in pageTitle) setView(hash); };
     applyHash(); window.addEventListener('hashchange', applyHash);
     return () => window.removeEventListener('hashchange', applyHash);
   }, []);
@@ -64,6 +71,9 @@ export default function FamilyApp() {
   useEffect(() => { fetch('/api/auth').then(r => r.json()).then(result => setAuthenticated(!!result.authenticated)).catch(() => {}); }, []);
   useEffect(() => { if (!toast) return; const t = setTimeout(() => setToast(''), 4000); return () => clearTimeout(t); }, [toast]);
   const go = (next: View) => { setView(next); window.location.hash = next; setMobileOpen(false); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+  const openCommunity = (tab: string, memberId = '') => { setCommunityMemberId(memberId); setSelectedId(null); setView('community'); window.location.hash = `community/${tab}`; window.scrollTo({ top: 0, behavior: 'smooth' }); };
+  const chooseSelf = (id: string) => { setSelfId(id); focusOnPerson(null); try { localStorage.setItem('huynh-tan-self', id); } catch {} };
+  const highlightedIds = useMemo(() => ancestorIds(selfId, members), [selfId, members]);
   const openPerson = (id: string) => { setSelectedId(id); };
   const focusOnPerson = (id: string | null) => { setFamilyOfId(null); setFocusTreeId(id); };
   const showParentsOf = (personId: string) => {
@@ -251,7 +261,7 @@ export default function FamilyApp() {
       )}
       {view !== 'origin' && loading && <div className="loading container">Đang tải gia phả...</div>}
       {view !== 'origin' && serverError && <div className="error-box container">{serverError}</div>}
-      {!loading && !serverError && view === 'tree' && <TreeView members={members} openPerson={openPerson} addMember={beginAdd} focusTreeId={focusTreeId} onFocusTreeId={focusOnPerson} familyOfId={familyOfId} showParentsOf={showParentsOf} />}
+      {!loading && !serverError && view === 'tree' && <><MyLineage members={members} selfId={selfId} onSelf={chooseSelf} openPerson={openPerson} /><TreeView highlightedIds={highlightedIds} members={members} openPerson={openPerson} addMember={beginAdd} focusTreeId={focusTreeId} onFocusTreeId={focusOnPerson} familyOfId={familyOfId} showParentsOf={showParentsOf} /></>}
       {!loading && !serverError && view === 'members' && <MembersView members={members} openPerson={openPerson} addMember={beginAdd} exportData={exportData} />}
       {!loading && !serverError && data && view === 'shrines' && <ShrinesView data={data} authenticated={authenticated} onData={setData} onLogin={() => setLoginOpen(true)} onToast={setToast} />}
       {!loading && !serverError && data && view === 'memorial' && <MemorialView data={data} authenticated={authenticated} onData={setData} onLogin={() => setLoginOpen(true)} onToast={setToast} openPerson={openPerson} />}
@@ -265,11 +275,12 @@ export default function FamilyApp() {
           onRemove={removeContent}
         />
       )}
+      {!loading && !serverError && data && view === 'community' && <CommunityHub data={data} authenticated={authenticated} onData={setData} openPerson={openPerson} onLogin={() => setLoginOpen(true)} selfId={selfId} targetMemberId={communityMemberId} />}
       {view === 'contact' && <ContactView />}
     </main>
 
-    <footer className="footer"><div className="container footer-grid"><div><div className="footer-brand"><span className="brand-seal">Tổ</span><strong>Gia phả Huỳnh Tấn</strong></div><p>Gìn giữ cội nguồn, kết nối hôm nay<br />và trao truyền cho mai sau.</p></div><div><h3>Khám phá</h3><button onClick={() => go('origin')}>Cội nguồn</button><button onClick={() => go('tree')}>Cây gia phả</button><button onClick={() => go('members')}>Thành viên</button><button onClick={() => go('shrines')}>Nhà thờ</button><button onClick={() => go('memorial')}>Ngày giỗ</button></div><div><h3>Kết nối</h3><button onClick={() => go('documents')}>Tư liệu</button><button onClick={() => go('news')}>Tin tức · Hoạt động</button><button onClick={() => go('contact')}>Liên hệ</button></div><div className="footer-mark">福</div></div><div className="container footer-bottom">© {new Date().getFullYear()} Gia phả Huỳnh Tấn · Gìn giữ truyền thống gia đình</div></footer>
-    {selected && <MemberProfile person={selected} members={members} authenticated={authenticated} close={() => setSelectedId(null)} openPerson={openPerson} edit={() => { setSelectedId(null); setEditing({ ...selected }); }} remove={() => remove(selected)} goTree={() => { const id = selected.id; setSelectedId(null); focusOnPerson(id); go('tree'); }} goParents={() => showParentsOf(selected.id)} />}
+    <footer className="footer"><div className="container footer-grid"><div><div className="footer-brand"><span className="brand-seal">Tổ</span><strong>Gia phả Huỳnh Tấn</strong></div><p>Gìn giữ cội nguồn, kết nối hôm nay<br />và trao truyền cho mai sau.</p></div><div><h3>Khám phá</h3><button onClick={() => go('origin')}>Cội nguồn</button><button onClick={() => go('tree')}>Cây gia phả</button><button onClick={() => go('members')}>Thành viên</button><button onClick={() => go('shrines')}>Nhà thờ</button><button onClick={() => go('memorial')}>Ngày giỗ</button></div><div><h3>Kết nối</h3><button onClick={() => openCommunity('album')}>Không gian dòng họ</button><button onClick={() => go('documents')}>Tư liệu</button><button onClick={() => go('news')}>Tin tức · Hoạt động</button><button onClick={() => go('contact')}>Liên hệ</button></div><div className="footer-mark">福</div></div><div className="container footer-bottom">© {new Date().getFullYear()} Gia phả Huỳnh Tấn · Gìn giữ truyền thống gia đình</div></footer>
+    {selected && <MemberProfile selfId={selfId} familyData={data!} onCommunity={tab => openCommunity(tab, selected.id)} person={selected} members={members} authenticated={authenticated} close={() => setSelectedId(null)} openPerson={openPerson} edit={() => { setSelectedId(null); setEditing({ ...selected }); }} remove={() => remove(selected)} goTree={() => { const id = selected.id; setSelectedId(null); focusOnPerson(id); go('tree'); }} goParents={() => showParentsOf(selected.id)} />}
     {editing && <MemberEditor initial={editing} members={members} close={() => setEditing(null)} save={save} />}
     {contentEditing && <ContentForm initial={contentEditing} close={() => setContentEditing(null)} save={saveContent} />}
     {newsEditing && (
@@ -451,6 +462,7 @@ const ORDINAL_NAMES: Record<number, string> = {
 };
 
 function VerticalTreeNode({
+  highlightedIds,
   person,
   members,
   openPerson,
@@ -462,6 +474,7 @@ function VerticalTreeNode({
   visited,
   maxGen,
 }: {
+  highlightedIds: Set<string>;
   person: Member;
   members: Member[];
   openPerson: (id: string) => void;
@@ -489,7 +502,7 @@ function VerticalTreeNode({
       <div className="vtree-card-row">
         <button
           type="button"
-          className="vtree-card"
+          className={`vtree-card ${highlightedIds.has(person.id) ? 'lineage-highlight' : ''}`}
           onClick={() => openPerson(person.id)}
         >
           <Avatar person={person} size="small" />
@@ -543,6 +556,7 @@ function VerticalTreeNode({
         <div className="vtree-children-list">
           {uniqueChildren.map(child => (
             <VerticalTreeNode
+              highlightedIds={highlightedIds}
               key={child.id}
               person={child}
               members={members}
@@ -563,6 +577,7 @@ function VerticalTreeNode({
 }
 
 function TreeView({
+  highlightedIds,
   members,
   openPerson,
   addMember,
@@ -571,6 +586,7 @@ function TreeView({
   familyOfId,
   showParentsOf
 }: {
+  highlightedIds: Set<string>;
   members: Member[];
   openPerson: (id: string) => void;
   addMember: () => void;
@@ -733,6 +749,8 @@ function TreeView({
     setExpandedIds(new Set(allWithChildren));
   };
 
+  useEffect(() => { if (highlightedIds.size) { setExpandedIds(previous => new Set([...previous, ...highlightedIds])); setMaxGen(99); setRootId('all'); } }, [highlightedIds]);
+
   const collapseToRoot = () => {
     setExpandedIds(new Set([...roots.map(r => r.id), ...(focusTreeId ? [focusTreeId] : [])]));
   };
@@ -780,10 +798,10 @@ function TreeView({
     const hasParent = [person.fatherId, person.motherId].some(id => id && members.some(member => member.id === id));
 
     return (
-      <div className="tree-node" key={person.id}>
+      <div className={`tree-node ${highlightedIds.has(person.id) ? 'lineage-branch' : ''}`} key={person.id}>
         <div className="tree-pair">
           <button
-            className="tree-card"
+            className={`tree-card ${highlightedIds.has(person.id) ? 'lineage-highlight' : ''}`}
             onClick={() => {
               if (!hasDraggedRef.current) openPerson(person.id);
             }}
@@ -795,7 +813,7 @@ function TreeView({
           </button>
           {spouse.map(s => (
             <button
-              className="tree-card spouse-card"
+              className={`tree-card spouse-card ${highlightedIds.has(s.id) ? 'lineage-highlight' : ''}`}
               key={s.id}
               onClick={() => {
                 if (!hasDraggedRef.current) openPerson(s.id);
@@ -1086,6 +1104,7 @@ function TreeView({
               {shown.length ? (
                 shown.map(root => (
                   <VerticalTreeNode
+              highlightedIds={highlightedIds}
                     key={root.id}
                     person={root}
                     members={members}

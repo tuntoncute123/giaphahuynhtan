@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { isAdmin } from '@/lib/auth';
-import { updateFamily } from '@/lib/store';
+import { publicFamily, updateFamily } from '@/lib/store';
+import { communityOf } from '@/lib/community/model';
 import type { ContentRecord, NewsCategory } from '@/lib/types';
 
 export const runtime = 'nodejs';
@@ -70,7 +71,7 @@ export async function POST(request: Request) {
       validate(record);
       data.content = [record, ...(data.content || [])];
     });
-    return NextResponse.json(data, { status: 201 });
+    return NextResponse.json(publicFamily(data, isAdmin(request)), { status: 201 });
   } catch (error) {
     return fail(error);
   }
@@ -100,6 +101,11 @@ export async function DELETE(request: Request) {
     const { data } = await updateFamily(data => {
       if (!data.content.some(item => item.id === id)) throw new InputError('Không tìm thấy nội dung.', 404);
       data.content = data.content.filter(item => item.id !== id);
+      const c = data.community = communityOf(data);
+      c.attendance = c.attendance.filter(a => a.eventId !== id);
+      c.tasks = c.tasks.filter(t => t.eventId !== id);
+      c.photos = c.photos.map(p => p.eventId === id ? { ...p, eventId: '' } : p);
+      c.memories = c.memories.map(m => m.eventId === id ? { ...m, eventId: '' } : m);
     });
     return NextResponse.json(data);
   } catch (error) {

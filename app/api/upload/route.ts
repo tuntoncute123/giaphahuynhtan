@@ -19,17 +19,19 @@ export async function POST(request: Request) {
     'image/jpeg': '.jpg',
     'image/png': '.png',
     'image/webp': '.webp',
-    'application/pdf': '.pdf'
+    'application/pdf': '.pdf',
+    'audio/webm': '.webm', 'audio/ogg': '.ogg', 'audio/mpeg': '.mp3',
+    'audio/mp4': '.m4a', 'audio/x-m4a': '.m4a', 'audio/wav': '.wav', 'audio/x-wav': '.wav'
   };
-  const extension = allowed[file.type];
+  const extension = allowed[file.type.split(';')[0]];
   if (!extension) {
-    return NextResponse.json({ error: 'Chỉ nhận hình ảnh (JPG, PNG, WebP) hoặc tệp PDF.' }, { status: 400 });
+    return NextResponse.json({ error: 'Chỉ nhận JPG, PNG, WebP, PDF hoặc âm thanh WebM, OGG, MP3, M4A, WAV.' }, { status: 400 });
   }
   if (extension === '.pdf' && !isAdmin(request)) {
     return NextResponse.json({ error: 'Chỉ ban quản trị mới có thể tải lên tệp PDF.' }, { status: 401 });
   }
-  if (file.size > 10 * 1024 * 1024) {
-    return NextResponse.json({ error: 'Kích thước tệp tối đa là 10 MB.' }, { status: 400 });
+  if (file.size === 0 || file.size > 4 * 1024 * 1024) {
+    return NextResponse.json({ error: 'Tệp phải có nội dung và tối đa 4 MB. Với âm thanh, hãy chia thành các đoạn ngắn.' }, { status: 400 });
   }
 
   const filename = `${crypto.randomUUID()}${extension}`;

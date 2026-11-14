@@ -8,3 +8,6 @@ public/uploads/
 data/family.json
 data/zalo-tokens.json
 .vercel
+
+/test-results/
+/playwright-report/

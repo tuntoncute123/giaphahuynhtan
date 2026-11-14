@@ -6,8 +6,9 @@ import { normalizeLocation } from './location';
 import { normalizeAnniversary } from './lunar';
 import type { FamilyData, Shrine } from './types';
 import { database, ensureDatabase, useDatabase } from './database';
+import { communityOf } from './community/model';
 
-const file = path.join(process.cwd(), 'data', 'family.json');
+const file = process.env.FAMILY_DATA_FILE || path.join(process.cwd(), 'data', 'family.json');
 let previousWrite: Promise<unknown> = Promise.resolve();
 export async function readFamily(): Promise<FamilyData> {
   let raw: FamilyData | string;
@@ -16,7 +17,7 @@ export async function readFamily(): Promise<FamilyData> {
     const rows = await database()`SELECT data FROM app_state WHERE key = 'family'`;
     raw = rows.length ? rows[0].data as FamilyData : structuredClone(seedData);
   } else {
-    try { raw = JSON.parse(await readFile(file, 'utf8')) as FamilyData; }
+    try { raw = JSON.parse(await readFile(/* turbopackIgnore: true */ file, 'utf8')) as FamilyData; }
     catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') raw = structuredClone(seedData); else throw error; }
   }
   return normalizeFamily(raw);
@@ -30,7 +31,7 @@ function normalizeFamily(raw: FamilyData | string): FamilyData {
     ...parsed,
     members: (parsed.members || []).map(normalizeMember),
     shrines: (parsed.shrines || []).map((item): Shrine => ({ ...item, name: String(item.name || ''), description: String(item.description || ''), location: normalizeLocation(item.location), caretakerId: item.caretakerId || null, ceremony: normalizeAnniversary(item.ceremony) })),
-    reminders: parsed.reminders || [], reminderLogs: parsed.reminderLogs || [], content: parsed.content || []
+    reminders: parsed.reminders || [], reminderLogs: parsed.reminderLogs || [], content: parsed.content || [], community: communityOf(parsed)
   };
 }
 export async function saveFamily(data: FamilyData) {
@@ -76,5 +77,6 @@ export async function updateFamily<T>(mutate: (data: FamilyData) => Promise<T> |
 }
 export function publicFamily(data: FamilyData, admin: boolean): FamilyData {
   if (admin) return data;
-  return { ...data, members: data.members.map(member => ({ ...member, home: member.homePublic ? member.home : { address: '', latitude: null, longitude: null }, zaloPhone: '', zaloConsent: false })), reminders: [], reminderLogs: [] };
+  const community = communityOf(data);
+  return { ...data, members: data.members.map(member => ({ ...member, home: member.homePublic ? member.home : { address: '', latitude: null, longitude: null }, zaloPhone: '', zaloConsent: false })), reminders: [], reminderLogs: [], community: { ...community, contributions: [], revisions: [], attendance: community.attendance.map(item => ({ ...item, owner: '', note: '' })) } };
 }

@@ -1404,3 +1404,18 @@ h2{font-family:'Charm',cursive;font-weight:700;line-height:1.34;letter-spacing:-
     place-items: center;
   }
 }
+
+/* Keep the extended family navigation usable on laptops and phones. */
+@media (min-width:1321px) {
+  .header-inner{width:min(1480px,calc(100% - 44px));gap:18px}
+  .header-inner .nav{gap:12px;font-size:13px}
+  .header-inner .brand-copy strong{font-size:22px}
+}
+@media (min-width:851px) and (max-width:1320px) {
+  .header-inner .brand{min-width:auto;margin-right:auto}
+  .header-inner .nav{display:none;position:absolute;top:100%;left:0;right:0;background:#f7eacb;padding:12px 22px 20px;box-shadow:0 15px 20px #33281322;flex-direction:column;align-items:stretch;gap:0;margin:0}
+  .header-inner .nav.nav-open{display:flex}
+  .header-inner .nav button{padding:11px;text-align:left}
+  .header-inner .nav button.active:after{bottom:5px;right:auto;width:60px;left:11px}
+  .header-inner .menu-toggle{display:grid;place-items:center}
+}

@@ -41,4 +41,16 @@ export type ContentRecord = {
   images?: string[];
   createdAt: string;
 };
-export type FamilyData = { members: Member[]; shrines: Shrine[]; reminders: ReminderSubscription[]; reminderLogs: ReminderLog[]; content: ContentRecord[]; updatedAt: string };
+export type PhotoTag = { memberId: string; x: number; y: number };
+export type FamilyPhoto = { id: string; title: string; imageUrl: string; eventId: string; tags: PhotoTag[]; createdAt: string };
+export type VoiceMemory = { id: string; title: string; narrator: string; description: string; audioUrl: string; imageUrls: string[]; memberIds: string[]; eventId: string; consent: boolean; createdAt: string };
+export type ContributionField = 'fullName' | 'birthDate' | 'deathDate' | 'birthPlace' | 'currentPlace' | 'occupation' | 'biography' | 'avatar' | 'fatherId' | 'motherId' | 'spouseIds';
+export type MemberPatch = Partial<Pick<Member, ContributionField>>;
+export type Contribution = { id: string; memberId: string; author: string; reason: string; patch: MemberPatch; before: MemberPatch; status: 'pending' | 'approved' | 'rejected'; reviewNote: string; createdAt: string; reviewedAt: string };
+export type MemberRevision = { id: string; memberId: string; before: Member; after: Member; reason: string; createdAt: string };
+export type Attendance = { id: string; eventId: string; name: string; guests: number; note: string; owner: string; createdAt: string };
+export type GatheringTask = { id: string; eventId: string; title: string; assigneeId: string; done: boolean };
+export type Grave = { id: string; memberId: string; cemetery: string; location: MapLocation; photoUrl: string; instructions: string; visits: { id: string; date: string; caretaker: string; note: string }[]; createdAt: string };
+export type SourceCitation = { id: string; memberId: string; field: ContributionField; title: string; url: string; page: string; excerpt: string; status: 'verified' | 'unverified'; createdAt: string };
+export type CommunityData = { photos: FamilyPhoto[]; memories: VoiceMemory[]; contributions: Contribution[]; revisions: MemberRevision[]; attendance: Attendance[]; tasks: GatheringTask[]; graves: Grave[]; sources: SourceCitation[] };
+export type FamilyData = { members: Member[]; shrines: Shrine[]; reminders: ReminderSubscription[]; reminderLogs: ReminderLog[]; content: ContentRecord[]; community?: CommunityData; updatedAt: string };
